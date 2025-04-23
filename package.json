@@ -20,8 +20,7 @@
     "uuid": "^11.1.0"
   },
   "scripts": {
-    "start": "nodemon app.js",
-    "dev": "nodemon app.js",
-    "seed": "node seeds/seed.js"
+    "start": "node app.js",
+    "dev": "node app.js"
   }
 }
