@@ -1,0 +1,129 @@
+<!-- Include SweetAlert2 CSS and JS files -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.27/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.27/dist/sweetalert2.all.min.js"></script>
+
+<!-- Hidden containers for flash messages -->
+<% if(typeof success !== 'undefined' && success) { %>
+<div id="success-message" data-message="<%= success %>" style="display: none;"></div>
+<% } %>
+
+<% if(typeof error !== 'undefined' && error) { %>
+<div id="error-message" data-message="<%= error %>" style="display: none;"></div>
+<% } %>
+
+<% if(typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+<div id="success-msg" data-message="<%= success_msg %>" style="display: none;"></div>
+<% } %>
+
+<% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+<div id="error-msg" data-message="<%= error_msg %>" style="display: none;"></div>
+<% } %>
+
+<% if(typeof warning_msg !== 'undefined' && warning_msg.length > 0) { %>
+<div id="warning-msg" data-message="<%= warning_msg %>" style="display: none;"></div>
+<% } %>
+
+<% if(typeof info_msg !== 'undefined' && info_msg.length > 0) { %>
+<div id="info-msg" data-message="<%= info_msg %>" style="display: none;"></div>
+<% } %>
+
+<!-- SweetAlert2 initialization -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize SweetAlert Toast for less important messages
+    const Toast = Swal.mixin({
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true,
+      didOpen: (toast) => {
+        toast.onmouseenter = Swal.stopTimer;
+        toast.onmouseleave = Swal.resumeTimer;
+      }
+    });
+    
+    // Check for URL parameters (used for logout notifications)
+    const urlParams = new URLSearchParams(window.location.search);
+    const flashType = urlParams.get('flash_type');
+    const flashMessage = urlParams.get('flash_message');
+    
+    // Display flash message if present in URL
+    if (flashType && flashMessage) {
+      const decodedMessage = decodeURIComponent(flashMessage);
+      
+      // Display toast notification for logout messages
+      if (decodedMessage.includes('logged out')) {
+        Toast.fire({
+          icon: flashType,
+          title: decodedMessage
+        });
+      }
+      
+      // Remove flash parameters from URL without reloading
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+    
+    // Check for success message (more important - used for login/register)
+    const successMsg = document.getElementById('success-message');
+    if (successMsg) {
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: successMsg.dataset.message,
+        confirmButtonColor: "#f84464",
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: false
+      });
+    }
+    
+    // Check for error message (more important - used for login/register)
+    const errorMsg = document.getElementById('error-message');
+    if (errorMsg) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: errorMsg.dataset.message,
+        confirmButtonColor: "#f84464"
+      });
+    }
+    
+    // Check for success_msg (less important)
+    const successMsgToast = document.getElementById('success-msg');
+    if (successMsgToast) {
+      Toast.fire({
+        icon: "success",
+        title: successMsgToast.dataset.message
+      });
+    }
+    
+    // Check for error_msg (less important)
+    const errorMsgToast = document.getElementById('error-msg');
+    if (errorMsgToast) {
+      Toast.fire({
+        icon: "error",
+        title: errorMsgToast.dataset.message
+      });
+    }
+    
+    // Check for warning_msg (less important)
+    const warningMsg = document.getElementById('warning-msg');
+    if (warningMsg) {
+      Toast.fire({
+        icon: "warning",
+        title: warningMsg.dataset.message
+      });
+    }
+    
+    // Check for info_msg (less important)
+    const infoMsg = document.getElementById('info-msg');
+    if (infoMsg) {
+      Toast.fire({
+        icon: "info",
+        title: infoMsg.dataset.message
+      });
+    }
+  });
+</script> 

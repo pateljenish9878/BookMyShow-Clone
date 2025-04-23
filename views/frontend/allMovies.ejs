@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="icon" href="/images/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>All Movies near Surat - BookMyShow Surat.</title>
+    
+</head>
+<body style="background-color: #f5f5f5;">
+    <header>
+        <div class="container">
+            <div class="top-header">
+                <div class="" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center;">
+                        <a href="/"><img src="/images/bookmyshow-logo-vector.png" class="bookmyshow" alt="" ></a>
+                    <div style="display: flex; margin-left: 30px;">
+                        <div style="position: relative;">
+                            <div class="search-data" style="position: absolute; display: flex; align-items: center; top: 11px; left: 8px;">
+                                <img src="/images/search.png" class="search-img" alt="">
+                            </div>
+                            <form action="/all-movies" method="GET" class="search-form">
+                                <input type="text" name="search" class="search-field" placeholder="Search for Movies...." value="<%= searchQuery || '' %>">
+                                <% if (selectedLanguage) { %>
+                                <input type="hidden" name="language" value="<%= selectedLanguage %>">
+                                <% } %>
+                                <% if (selectedCategory) { %>
+                                <input type="hidden" name="category" value="<%= selectedCategory %>">
+                                <% } %>
+                                <button class="search-btn" type="submit">Search</button>
+                            </form>
+                        </div>
+                    </div>
+                    </div>
+                    <div>
+                        <% if (locals.user) { %>
+                            <div class="user-dropdown">
+                                <div class="user-dropdown-toggle">
+                                    <div class="user-avatar">
+                                        <% if (user.profilePic && user.profilePic !== 'default-profile.png') { %>
+                                            <img src="/uploads/users/<%= user.profilePic %>" alt="<%= user.name %>">
+                                        <% } else { %>
+                                            <div class="user-avatar-placeholder">
+                                                <%= user.name.charAt(0).toUpperCase() %>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                    <span class="user-name">Hi, <%= user.name.split(' ')[0] %></span>
+                                    <i class="fas fa-chevron-down" style="font-size: 12px; color: #777;"></i>
+                                </div>
+                                <div class="user-dropdown-content">
+                                    <a href="/user/profile" class="dropdown-item">
+                                        <i class="fas fa-user"></i>
+                                        View Profile
+                                    </a>
+                                    <a href="/user/change-password" class="dropdown-item">
+                                        <i class="fas fa-key"></i>
+                                        Change Password
+                                    </a>
+                                    <div class="dropdown-divider"></div>
+                                    <a href="/logout" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                        Logout
+                                    </a>
+                                </div>
+                            </div>
+                        <% } else { %>
+                            <button class="sign-in"><a href="/user/login">Sign In</a></button>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+            <div style="background-color: #f5f5f5;">
+                <div class="bottom-header">
+                    <div>
+                        <ul>
+                            <li style="padding-left: 0;"><a href="/all-movies" class="nav-active">Movies</a></li>
+                            <li><a href="/bookings">Your Bookings</a></li>
+                            <li><a href="/coming-soon">Events</a></li>
+                            <li><a href="/coming-soon">Plays</a></li>
+                            <li><a href="/coming-soon">Sports</a></li>
+                            <li><a href="/coming-soon">Activities</a></li>
+                        </ul>
+                    </div>
+                    
+                </div>
+            </div>
+    </header>
+    <div class="slider">
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+              <% sliderBanners.forEach(function(banner) { %>
+                <div class="swiper-slide"><img src="<%= banner %>" alt="Slider Banner"></div>
+              <% }); %>
+              <div class="swiper-slide"><img src="/images/swiper-1.jpg" alt="Slider Banner"></div>
+            </div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-pagination"></div>
+          </div>
+    </div>
+
+    <div class="container movie-wrapper">
+        <section class="filters">
+            <h2 class="filter-heading">Filters </h2>
+            <div class="language-filter filter">
+                <div class="language-header filter-header">
+                    <h5>Languages</h5>
+                    <a href="/all-movies<%= searchQuery ? '?search=' + searchQuery : '' %><%= selectedCategory ? (searchQuery ? '&' : '?') + 'category=' + selectedCategory : '' %>">Clear</a>
+                </div>
+                <div class="language-filters filters-list">
+                    <ul>
+                        <li><a href="/all-movies?language=English<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'English' ? 'active-filter' : '' %>">English</a></li>
+                        <li><a href="/all-movies?language=Hindi<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Hindi' ? 'active-filter' : '' %>">Hindi</a></li>
+                        <li><a href="/all-movies?language=Gujarati<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Gujarati' ? 'active-filter' : '' %>">Gujarati</a></li>
+                        <li><a href="/all-movies?language=Malayalam<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Malayalam' ? 'active-filter' : '' %>">Malayalam</a></li>
+                        <li><a href="/all-movies?language=Japanese<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Japanese' ? 'active-filter' : '' %>">Japanese</a></li>
+                        <li><a href="/all-movies?language=Punjabi<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Punjabi' ? 'active-filter' : '' %>">Punjabi</a></li>
+                        <li><a href="/all-movies?language=Tamil<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Tamil' ? 'active-filter' : '' %>">Tamil</a></li>
+                        <li><a href="/all-movies?language=Telugu<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Telugu' ? 'active-filter' : '' %>">Telugu</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="genres-filter filter">
+                <div class="genres-header filter-header">
+                    <h5>Genres</h5>
+                    <a href="/all-movies<%= searchQuery ? '?search=' + searchQuery : '' %><%= selectedLanguage ? (searchQuery ? '&' : '?') + 'language=' + selectedLanguage : '' %>">Clear</a>
+                </div>
+                <div class="genres-filters filters-list">
+                    <ul>
+                        <li><a href="/all-movies?category=Drama<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Drama' ? 'active-filter' : '' %>">Drama</a></li>
+                        <li><a href="/all-movies?category=Comedy<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Comedy' ? 'active-filter' : '' %>">Comedy</a></li>
+                        <li><a href="/all-movies?category=Action<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Action' ? 'active-filter' : '' %>">Action</a></li>
+                        <li><a href="/all-movies?category=Thriller<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Thriller' ? 'active-filter' : '' %>">Thriller</a></li>
+                        <li><a href="/all-movies?category=Sports<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Sports' ? 'active-filter' : '' %>">Sports</a></li>
+                        <li><a href="/all-movies?category=Adventure<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Adventure' ? 'active-filter' : '' %>">Adventure</a></li>
+                        <li><a href="/all-movies?category=Animation<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Animation' ? 'active-filter' : '' %>">Animation</a></li>
+                        <li><a href="/all-movies?category=Family<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Family' ? 'active-filter' : '' %>">Family</a></li>
+                        <li><a href="/all-movies?category=Historical<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Historical' ? 'active-filter' : '' %>">Historical</a></li>
+                        <li><a href="/all-movies?category=Horror<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Horror' ? 'active-filter' : '' %>">Horror</a></li>
+                        <li><a href="/all-movies?category=Anime<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Anime' ? 'active-filter' : '' %>">Anime</a></li>
+                        <li><a href="/all-movies?category=Biography<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Biography' ? 'active-filter' : '' %>">Biography</a></li>
+                        <li><a href="/all-movies?category=Crime<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Crime' ? 'active-filter' : '' %>">Crime</a></li>
+                        <li><a href="/all-movies?category=Romantic<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Romantic' ? 'active-filter' : '' %>">Romantic</a></li>
+                        <li><a href="/all-movies?category=Sci-Fi<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %>" class="<%= selectedCategory === 'Sci-Fi' ? 'active-filter' : '' %>">Sci-Fi</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="browse-cinema">
+                <a href="">Browse by Cinemas</a>
+            </div>
+        </section>
+    <section class="recommend-movi all-movies">
+            <div class="recommend-heading all-movie-heading">
+                <h2>All Movies</h2>
+            </div>
+            <div class="language-filter-nav">
+                <ul>
+                    <li><a href="/all-movies?language=English<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'English' ? 'active-filter' : '' %>">English</a></li>
+                    <li><a href="/all-movies?language=Hindi<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Hindi' ? 'active-filter' : '' %>">Hindi</a></li>
+                    <li><a href="/all-movies?language=Gujarati<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Gujarati' ? 'active-filter' : '' %>">Gujarati</a></li>
+                    <li><a href="/all-movies?language=Malayalam<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Malayalam' ? 'active-filter' : '' %>">Malayalam</a></li>
+                    <li><a href="/all-movies?language=Japanese<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Japanese' ? 'active-filter' : '' %>">Japanese</a></li>
+                    <li><a href="/all-movies?language=Punjabi<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Punjabi' ? 'active-filter' : '' %>">Punjabi</a></li>
+                    <li><a href="/all-movies?language=Tamil<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Tamil' ? 'active-filter' : '' %>">Tamil</a></li>
+                    <li><a href="/all-movies?language=Telugu<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="<%= selectedLanguage === 'Telugu' ? 'active-filter' : '' %>">Telugu</a></li>
+                </ul>
+            </div>
+            <div class="recommend-card-wrapper">
+                <% if (movies.length === 0) { %>
+                <p>No movies found.</p>
+                <% } else { %>
+                <% movies.forEach(movie => { %>
+                <div class="recommend-card" onclick="window.location.href='/movie/<%= movie._id %>'">
+                    <img src="<%= movie.image.startsWith('movie-') ? `/uploads/movies/${movie.image}` : `/uploads/${movie.image}` %>" alt="<%= movie.title %>" class="recommend-movie-img">
+                    <h3 class="recommend-movie-title"><%= movie.title %></h3>
+                    <p class="recommend-movie-category"><%= movie.category %></p>
+                </div>
+                <% }); %>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="line"></div>
+                <div><img src="/images/footer-logo.svg" alt=""></div>
+                <div class="line"></div>
+            </div>
+            <div class="social-icons-strip">
+                <a href="https://www.facebook.com" target="_blank"><img src="/images/facebook.png" alt=""></a>
+                <a href="https://www.x.com" target="_blank"><img src="/images/twitter.png" alt=""></a>
+                <a href="https://www.instagram.com" target="_blank"><img src="/images/instagram.png" alt=""></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="/images/youtube.png" alt=""></a>
+                <a href="https://www.pinterest.com" target="_blank"><img src="/images/pintrest.png" alt=""></a>
+                <a href="https://www.linkedin.com" target="_blank"><img style="margin-right: 0;" src="/images/linkedin.png" alt=""></a>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-text">
+                    <br>Copyright 2025 © Bigtree Entertainment Pvt. Ltd. All Rights Reserved. </br>The content and images used on this site are copyright protected and copyrights vests with the respective owners. The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. Unauthorized use is prohibited and punishable by law.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+   var swiper = new Swiper(".mySwiper", {
+      slidesPerView: "auto",
+      centeredSlides: true,
+      spaceBetween: 10,
+      loop: true,
+      autoplay: {
+      delay: 2000,
+      disableOnInteraction: false,
+    },
+    pagination: {
+      el: ".swiper-pagination",
+      clickable: true,
+    },
+    navigation: {
+      nextEl: ".swiper-button-next",
+      prevEl: ".swiper-button-prev",
+    },
+    });
+  </script>
+</html>

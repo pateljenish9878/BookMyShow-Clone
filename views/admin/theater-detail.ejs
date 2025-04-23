@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin/sidebar.ejs', { path: '/admin/theaters' }) %>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Theater Details</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/admin/theaters" class="btn btn-sm btn-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Theaters
+                        </a>
+                        <a href="/admin/theaters/<%= theater._id %>/edit" class="btn btn-sm btn-primary me-2">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteTheaterModal">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <!-- Theater Info -->
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0 text-white">Theater Information</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="mt-4">Basic Details</h5>
+                                        <table class="table table-borderless">
+                                            <tbody>
+                                                <tr>
+                                                    <th width="35%">Name:</th>
+                                                    <td><%= theater.name %></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Location:</th>
+                                                    <td><%= theater.location %></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>City:</th>
+                                                    <td><%= theater.city %></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>State:</th>
+                                                    <td><%= theater.state %></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>PIN Code:</th>
+                                                    <td><%= theater.pincode || 'N/A' %></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Contact:</th>
+                                                    <td><%= theater.contactNumber || 'N/A' %></td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Total Seats:</th>
+                                                    <td>
+                                                        <%= theater.totalSeats %>
+                                                        <small class="text-muted">(Sum of all screen capacities)</small>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Status:</th>
+                                                    <td>
+                                                        <span class="badge bg-<%= theater.status ? 'success' : 'danger' %>">
+                                                            <%= theater.status ? 'Active' : 'Inactive' %>
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <th>Added On:</th>
+                                                    <td><%= new Date(theater.createdAt).toLocaleDateString() %></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <h5 class="mt-4">Facilities</h5>
+                                        <% if (theater.facilities && theater.facilities.length > 0) { %>
+                                            <div class="d-flex flex-wrap mb-3">
+                                                <% theater.facilities.forEach(facility => { %>
+                                                    <span class="badge bg-info text-dark me-2 mb-2 p-2">
+                                                        <i class="fas fa-check-circle me-1"></i> <%= facility %>
+                                                    </span>
+                                                <% }); %>
+                                            </div>
+                                        <% } else { %>
+                                            <p class="text-muted">No facilities listed</p>
+                                        <% } %>
+                                        
+                                        <h5 class="mt-4">Screens</h5>
+                                        <% if (theater.screens && theater.screens.length > 0) { %>
+                                            <div class="accordion" id="screensAccordion">
+                                                <% theater.screens.forEach((screen, index) => { %>
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header" id="screen<%= index %>Heading">
+                                                            <button class="accordion-button <%= index > 0 ? 'collapsed' : '' %>" type="button" data-bs-toggle="collapse" 
+                                                                data-bs-target="#screen<%= index %>Collapse" aria-expanded="<%= index === 0 ? 'true' : 'false' %>" 
+                                                                aria-controls="screen<%= index %>Collapse">
+                                                                <%= screen.name %> 
+                                                                <span class="badge bg-secondary ms-2"><%= screen.type || '2D' %></span>
+                                                            </button>
+                                                        </h2>
+                                                        <div id="screen<%= index %>Collapse" class="accordion-collapse collapse <%= index === 0 ? 'show' : '' %>" 
+                                                            aria-labelledby="screen<%= index %>Heading" data-bs-parent="#screensAccordion">
+                                                            <div class="accordion-body">
+                                                                <table class="table table-sm table-borderless mb-0">
+                                                                    <tr>
+                                                                        <th width="40%">Total Seats:</th>
+                                                                        <td><%= screen.totalSeats %></td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <th>Layout:</th>
+                                                                        <td>
+                                                                            <% if (screen.seatLayout) { %>
+                                                                                <%= screen.seatLayout.rows %> rows × <%= screen.seatLayout.columns %> columns
+                                                                            <% } else { %>
+                                                                                Layout not specified
+                                                                            <% } %>
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <% }); %>
+                                            </div>
+                                        <% } else { %>
+                                            <p class="text-muted">No screens available</p>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Upcoming Shows Section -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Upcoming Shows</h5>
+                            </div>
+                            <div class="card-body">
+                                <% if (typeof upcomingShows !== 'undefined' && upcomingShows.length > 0) { %>
+                                    <div class="table-responsive">
+                                        <table class="table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Movie</th>
+                                                    
+                                                    <th>Date</th>
+                                                    <th>Time</th>
+                                                    <th>Price</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <% upcomingShows.forEach(show => { %>
+                                                    <% 
+                                                        // Find screen info
+                                                        let screenName = "Unknown Screen";
+                                                        let screenType = "";
+                                                        
+                                                        if (theater.screens) {
+                                                            const screen = theater.screens.find(s => s._id.toString() === show.screenId.toString());
+                                                            if (screen) {
+                                                                screenName = screen.name;
+                                                                screenType = screen.type || '';
+                                                            }
+                                                        }
+                                                        
+                                                        // Format date and time
+                                                        const showDate = new Date(show.showDate);
+                                                        const formattedDate = showDate.toLocaleDateString();
+                                                        
+                                                        // Format time to 12-hour format
+                                                        let formattedTime = show.showTime;
+                                                        if (show.showTime) {
+                                                            const timeParts = show.showTime.split(':');
+                                                            if (timeParts.length === 2) {
+                                                                const hours = parseInt(timeParts[0]);
+                                                                const ampm = hours >= 12 ? 'PM' : 'AM';
+                                                                const hours12 = hours % 12 || 12;
+                                                                formattedTime = `${hours12}:${timeParts[1]} ${ampm}`;
+                                                            }
+                                                        }
+                                                    %>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex align-items-center">
+                                                                <% if (show.movieId && show.movieId.image) { %>
+                                                                    <img src="/uploads/movies/<%= show.movieId.image %>" class="img-thumbnail me-2" style="width: 40px; height: 50px; object-fit: cover;" alt="<%= show.movieId.title %>">
+                                                                <% } %>
+                                                                <div>
+                                                                    <%= show.movieId ? show.movieId.title : 'Unknown Movie' %>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        
+                                                        <td><%= formattedDate %></td>
+                                                        <td><span class="badge bg-secondary"><%= formattedTime %></span></td>
+                                                        <td><span class="badge bg-success">₹<%= show.price %></span></td>
+                                                        <td>
+                                                            <a href="/admin/shows/<%= show._id %>/edit" class="btn btn-sm btn-primary">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                <% }); %>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <% if (typeof stats !== 'undefined' && stats.totalShows > upcomingShows.length) { %>
+                                        <div class="mt-3 text-center">
+                                            <a href="/admin/shows" class="btn btn-sm btn-outline-primary">View All Shows</a>
+                                        </div>
+                                    <% } %>
+                                <% } else { %>
+                                    <p class="text-muted">No upcoming shows scheduled for this theater.</p>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sidebar with image and stats -->
+                    <div class="col-lg-4">
+                        <div class="card mb-4">
+                            <div class="card-body text-center">
+                                <% if (theater.image) { %>
+                                    <img src="/uploads/theaters/<%= theater.image %>" class="img-fluid rounded mb-3" alt="<%= theater.name %>">
+                                <% } else { %>
+                                    <img src="/uploads/theaters/default-theater.jpg" class="img-fluid rounded mb-3" alt="Default Theater Image">
+                                <% } %>
+                                
+                                <h4 class="card-title"><%= theater.name %></h4>
+                                <p class="card-text text-muted">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    <%= theater.city %>, <%= theater.state %>
+                                </p>
+                                
+                                <div class="d-grid gap-2 mt-3">
+                                    <a href="/admin/theaters/<%= theater._id %>/edit" class="btn btn-primary">
+                                        <i class="fas fa-edit me-1"></i> Edit Theater
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats Card -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="mb-0">Theater Statistics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-primary bg-opacity-10 p-2 rounded-circle">
+                                                    <i class="fas fa-film text-primary"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3 text-start">
+                                                <h6 class="mb-0">Screens</h6>
+                                                <h5 class="mb-0"><%= theater.screens ? theater.screens.length : 0 %></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-success bg-opacity-10 p-2 rounded-circle">
+                                                    <i class="fas fa-couch text-success"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3 text-start">
+                                                <h6 class="mb-0">Total Seats</h6>
+                                                <h5 class="mb-0"><%= theater.totalSeats %></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 mb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="bg-info bg-opacity-10 p-2 rounded-circle">
+                                                    <i class="fas fa-calendar-alt text-info"></i>
+                                                </div>
+                                            </div>
+                                            <div class="flex-grow-1 ms-3 text-start">
+                                                <h6 class="mb-0">Shows</h6>
+                                                <h5 class="mb-0"><%= typeof stats !== 'undefined' ? stats.totalShows : '0' %></h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteTheaterModal" tabindex="-1" aria-labelledby="deleteTheaterModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteTheaterModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete the theater "<%= theater.name %>"?</p>
+                    <p class="text-danger"><strong>Warning:</strong> This action cannot be undone and may affect related shows and bookings.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="/admin/theaters/<%= theater._id %>?_method=DELETE" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <%- include('../partials/admin/footer.ejs') %>
+</body>
+</html> 

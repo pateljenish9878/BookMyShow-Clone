@@ -1,0 +1,62 @@
+<nav class="navbar navbar-expand fixed-top">
+    <div class="container-fluid">
+        <!-- Toggle Sidebar Button -->
+        
+        
+        <!-- Brand -->
+        <a class="navbar-brand ms-2" style="background-color: #fff; text-decoration: none; color: #f84464; box-shadow: none; display: flex; align-items: center; justify-content: center;" href="/admin/dashboard">
+            <img src="/images/bookmyshow-logo-vector.png" alt="BookMyShow" height="30" class="d-inline-block align-text-top me-2">
+            Admin Panel
+        </a>
+        
+        <!-- Spacer to push navbar content to the right -->
+        <div class="flex-grow-1"></div>
+        
+        <!-- Right-aligned navbar content -->
+        <ul class="navbar-nav">
+            <!-- Search -->
+            
+        
+            
+            <!-- User Menu -->
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <% if (adminUser && adminUser.profilePic) { %>
+                        <img src="/uploads/users/<%= adminUser.profilePic %>" alt="<%= adminUser.name %>" class="rounded-circle me-2" width="32" height="32" 
+                             onerror="this.onerror=null; this.src='/uploads/profiles/<%= adminUser.profilePic %>'; 
+                                      this.onerror=function(){this.onerror=null; this.src='/public/uploads/users/<%= adminUser.profilePic %>'; 
+                                      this.onerror=function(){this.onerror=null; this.src='https://ui-avatars.com/api/?name=<%= encodeURIComponent(adminUser.name) %>&background=0D6EFD&color=fff&size=32';}}">
+                    <% } else { %>
+                        <div class="avatar-placeholder rounded-circle text-bg-primary me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <%= adminUser ? adminUser.name.charAt(0).toUpperCase() : 'A' %>
+                        </div>
+                    <% } %>
+                    <span class="d-none d-md-inline"><%= adminUser ? adminUser.name : 'Admin' %></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    <li><h6 class="dropdown-header">Admin User</h6></li>
+                    <li><a class="dropdown-item" href="/admin/profile"><i class="fas fa-user-circle me-2"></i> Profile</a></li>
+                    <li><a class="dropdown-item" href="/admin/settings"><i class="fas fa-cog me-2"></i> Settings</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="/admin/logout"><i class="fas fa-sign-out-alt me-2"></i> Sign out</a></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<script>
+    // Sidebar toggle functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const main = document.querySelector('.main');
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                main.classList.toggle('full-width');
+            });
+        }
+    });
+</script> 

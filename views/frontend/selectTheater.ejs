@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" href="/images/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>Select Theater - <%= movie.title %></title>
+    <style>
+        .theater-selection {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .movie-info-banner {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .movie-info-banner img {
+            width: 80px;
+            height: 120px;
+            object-fit: cover;
+            margin-right: 20px;
+            border-radius: 4px;
+        }
+        .theater-list {
+            margin-top: 20px;
+        }
+        .theater-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .theater-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f5f5f5;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .theater-name {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .theater-location {
+            color: #666;
+            font-size: 14px;
+            margin: 0;
+        }
+        .theater-shows {
+            padding: 15px;
+        }
+        .date-navigation {
+            display: flex;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            gap: 10px;
+        }
+        .date-item {
+            min-width: 80px;
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .date-item.active {
+            background: #f84464;
+            color: white;
+            border-color: #f84464;
+        }
+        .date-item .day {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .date-item .date {
+            font-size: 14px;
+        }
+        .date-item .month {
+            font-size: 12px;
+            color: #666;
+        }
+        .date-item.active .month {
+            color: #fff;
+        }
+        .show-time-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .show-time {
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+        .show-time:hover {
+            background: rgba(248, 68, 100, 0.1);
+            border-color: #f84464;
+        }
+        .filter-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .filter-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .filter-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .filter-option {
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .filter-option.active {
+            background: #f84464;
+            color: white;
+            border-color: #f84464;
+        }
+        .no-theaters {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .amenities {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        .amenity {
+            font-size: 12px;
+            color: #666;
+            background: #f1f1f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="top-header">
+                <div>
+                    <a href="/"><img src="/images/bookmyshow-logo-vector.png" class="bookmyshow" alt="BookMyShow"></a>
+                </div>
+                
+                <div>
+                    <% if (locals.user) { %>
+                        <div class="user-dropdown">
+                            <div class="user-dropdown-toggle">
+                                <div class="user-avatar">
+                                    <% if (user.profilePic && user.profilePic !== 'default-profile.png') { %>
+                                        <img src="/uploads/users/<%= user.profilePic %>" alt="<%= user.name %>">
+                                    <% } else { %>
+                                        <div class="user-avatar-placeholder">
+                                            <%= user.name.charAt(0).toUpperCase() %>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <span class="user-name">Hi, <%= user.name.split(' ')[0] %></span>
+                                <i class="fas fa-chevron-down" style="font-size: 12px; color: #777;"></i>
+                            </div>
+                            <div class="user-dropdown-content">
+                                <a href="/user/profile" class="dropdown-item">
+                                    <i class="fas fa-user"></i>
+                                    View Profile
+                                </a>
+                                <a href="/user/change-password" class="dropdown-item">
+                                    <i class="fas fa-key"></i>
+                                    Change Password
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="/logout" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <button class="sign-in"><a href="/user/login">Sign In</a></button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: #f5f5f5;">
+            <div class="bottom-header">
+                <div>
+                    <ul>
+                        <li style="padding-left: 0;"><a href="/all-movies">Movies</a></li>
+                        <li><a href="/bookings">Your Bookings</a></li>
+                        <li><a href="/coming-soon">Events</a></li>
+                        <li><a href="/coming-soon">Plays</a></li>
+                        <li><a href="/coming-soon">Sports</a></li>
+                        <li><a href="/coming-soon">Activities</a></li>
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
+    </header>
+
+    <main class="theater-selection">
+        <!-- Movie Info Banner -->
+        <div class="movie-info-banner">
+            <img src="<%= movie.image ? (movie.image.startsWith('http') ? movie.image : `/${movie.image.includes('uploads/') ? '' : 'uploads/movies/'}${movie.image}`) : '/images/movie-background.jpg' %>" alt="<%= movie.title %>">
+            <div>
+                <h2><%= movie.title %></h2>
+                <p><%= movie.category %> • <%= movie.duration %> min • <%= movie.language %></p>
+            </div>
+        </div>
+
+        <!-- Date Selection -->
+        <div class="date-navigation">
+            <% 
+            // Generate dates directly without using Date objects that cause timezone issues
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            // Always get the URL date if it exists - use the value passed from the controller
+            const urlDate = locals.selectedDateStr || '';
+            
+            // Get today's date parts
+            const todayObj = new Date();
+            const todayYear = todayObj.getFullYear();
+            const todayMonth = todayObj.getMonth() + 1; // 1-indexed month
+            const todayDay = todayObj.getDate();
+            const todayIsoString = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
+            
+            // Selected date is either from URL or today
+            const selectedDateStr = urlDate || todayIsoString;
+            
+            console.log('DATE NAVIGATION - Selected date:', selectedDateStr, 'URL date:', urlDate);
+            
+            // Generate 7 days starting from today
+            for(let i = 0; i < 7; i++) {
+                // Create date for this day
+                const dateObj = new Date();
+                dateObj.setDate(todayObj.getDate() + i);
+                
+                const year = dateObj.getFullYear();
+                const month = dateObj.getMonth() + 1; // 1-indexed month
+                const date = dateObj.getDate();
+                const dayOfWeek = dateObj.getDay();
+                
+                // Create ISO string manually to avoid timezone issues
+                const isoString = `${year}-${String(month).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                
+                // Check if this is the selected date - compare exact string values
+                const isActive = selectedDateStr === isoString;
+                console.log(`DATE ITEM: ${isoString}, Selected: ${selectedDateStr}, Is Active: ${isActive}`);
+            %>
+                <div class="date-item <%= isActive ? 'active' : '' %>" data-date="<%= isoString %>">
+                    <div class="day"><%= days[dayOfWeek] %></div>
+                    <div class="date"><%= date %></div>
+                    <div class="month"><%= months[dateObj.getMonth()] %></div>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Theater List -->
+        <div class="theater-list">
+            <% if (theaters && theaters.length > 0) { %>
+                <% theaters.forEach(theater => { %>
+                    <div class="theater-card">
+                        <div class="theater-header">
+                            <div>
+                                <h3 class="theater-name"><%= theater.name %></h3>
+                                <p class="theater-location"><%= theater.location %>, <%= theater.city %></p>
+                            </div>
+                            <div>
+                                <a href="/theaters/<%= theater._id %>" style="font-size: 14px; color: #f84464;">Info</a>
+                            </div>
+                        </div>
+                        <div class="amenities">
+                            <div class="amenity">M-Ticket</div>
+                            <div class="amenity">Food & Beverage</div>
+                            <% if (theater.facilities) { %>
+                                <% 
+                                if (Array.isArray(theater.facilities)) {
+                                    theater.facilities.forEach(facility => { %>
+                                        <div class="amenity"><%= facility %></div>
+                                <%  });
+                                } else if (typeof theater.facilities === 'string') {
+                                    theater.facilities.split(',').forEach(facility => { %>
+                                        <div class="amenity"><%= facility.trim() %></div>
+                                <%  });
+                                }
+                                %>
+                            <% } %>
+                        </div>
+                        <div class="theater-shows">
+                            <div class="show-time-list">
+                                <% 
+                                // Check if real show data is available for this theater
+                                if (locals.theaterShows && theaterShows[theater._id.toString()] && theaterShows[theater._id.toString()].length > 0) {
+                                    // Get the date from the controller
+                                    const filterDate = locals.selectedDateStr || todayIsoString;
+                                    
+                                    console.log('FILTER DATE FROM SERVER SIDE:', filterDate);
+                                    
+                                    // Filter shows for the selected date - compare raw date strings without Date conversion
+                                    const todayShows = theaterShows[theater._id.toString()].filter(show => {
+                                        let showDateStr;
+                                        if (show.showDate) {
+                                            if (typeof show.showDate === 'string') {
+                                                // If already a string format like "2023-04-22", use directly
+                                                if (show.showDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                                    showDateStr = show.showDate;
+                                                } else {
+                                                    // Try to extract just the date part without timezone conversion
+                                                    const parts = show.showDate.split('T')[0];
+                                                    showDateStr = parts;
+                                                }
+                                            } else if (show.showDate instanceof Date) {
+                                                // Format date manually without using toISOString() to avoid timezone issues
+                                                const year = show.showDate.getFullYear();
+                                                const month = String(show.showDate.getMonth() + 1).padStart(2, '0'); // months are 0-based
+                                                const day = String(show.showDate.getDate()).padStart(2, '0');
+                                                showDateStr = `${year}-${month}-${day}`;
+                                            }
+                                        }
+                                        console.log(`Show date: ${showDateStr}, Selected date: ${filterDate}`);
+                                        return showDateStr === filterDate;
+                                    });
+                                    
+                                    if (todayShows.length > 0) {
+                                        // Sort shows by time
+                                        todayShows.sort((a, b) => {
+                                            return a.showTime.localeCompare(b.showTime);
+                                        });
+                                        
+                                        todayShows.forEach(show => { 
+                                            // Find the corresponding screen
+                                            let screenName = '';
+                                            let screenType = '';
+                                            
+                                            if (theater.screens && theater.screens.length > 0) {
+                                                const screen = theater.screens.find(s => s._id.toString() === show.screenId.toString());
+                                                if (screen) {
+                                                    screenName = screen.name || '';
+                                                    screenType = screen.type || '';
+                                                }
+                                            }
+                                            
+                                            // Use formatted time if available
+                                            const displayTime = show.formattedTime || show.showTime;
+                                            
+                                            // Format the date for the URL - always use the selected date (filterDate)
+                                            // This ensures consistency between what the user selected in the date navigation
+                                            // and what gets passed to the seat selection page
+                                            let dateParam = filterDate;
+                                        %>
+                                            <a href="/bookings/select-seats/<%= movie._id %>/<%= theater._id %>?time=<%= encodeURIComponent(show.showTime) %>&date=<%= dateParam %>" class="show-time" style="text-decoration: none; color:#f84464" >
+                                                <%= displayTime %> 
+                                                <% if (screenName || screenType) { %>
+                                                    <small style="display: block; font-size: 10px; color: #666;">
+                                                        <%= screenName %> <%= screenType %>
+                                                        <% if (show.price) { %>
+                                                        <span style="color: #f84464; font-weight: bold;">₹<%= show.price %></span>
+                                                        <% } %>
+                                                    </small>
+                                                <% } %>
+                                            </a>
+                                        <% });
+                                    } else { %>
+                                        <p style="color: #666; font-size: 14px;">No shows available for selected date</p>
+                                    <% }
+                                } else { %>
+                                    <p style="color: #666; font-size: 14px;">No shows available for this theater</p>
+                                <% } %>
+                            </div>
+                            <% if (theater.totalSeats) { %>
+                            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                                Total Capacity: <%= theater.totalSeats %> seats
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="no-theaters">
+                    <h3>No theaters showing this movie</h3>
+                    <p>Please check back later or select another movie.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="line"></div>
+                <div><img src="/images/footer-logo.svg" alt="BookMyShow Logo"></div>
+                <div class="line"></div>
+            </div>
+            <div class="social-icons-strip">
+                <a href="https://www.facebook.com" target="_blank"><img src="/images/facebook.png" alt="Facebook"></a>
+                <a href="https://www.x.com" target="_blank"><img src="/images/twitter.png" alt="Twitter"></a>
+                <a href="https://www.instagram.com" target="_blank"><img src="/images/instagram.png" alt="Instagram"></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="/images/youtube.png" alt="YouTube"></a>
+                <a href="https://www.pinterest.com" target="_blank"><img src="/images/pintrest.png" alt="Pinterest"></a>
+                <a href="https://www.linkedin.com" target="_blank"><img style="margin-right: 0;" src="/images/linkedin.png" alt="LinkedIn"></a>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-text">
+                    <p>Copyright 2025 © Bigtree Entertainment Pvt. Ltd. All Rights Reserved.</p>
+                    <p>The content and images used on this site are copyright protected and copyrights vests with the respective owners. The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. Unauthorized use is prohibited and punishable by law.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the date from URL parameter
+            let urlParams = new URLSearchParams(window.location.search);
+            let urlDate = urlParams.get('date');
+            let selectedDateStr = "<%= filterDate %>"; // Default from server
+            
+            // Handle date navigation
+            function activateSelectedDate() {
+                document.querySelectorAll('.date-item').forEach(function(dateItem) {
+                    dateItem.classList.remove('active');
+                });
+                
+                // Find the date element to activate
+                let dateToActivate = selectedDateStr;
+                document.querySelectorAll('.date-item').forEach(function(dateItem) {
+                    let isoString = dateItem.getAttribute('data-date');
+                    let isActive = (isoString === dateToActivate);
+                    
+                    if (isActive) {
+                        dateItem.classList.add('active');
+                    }
+                });
+            }
+            
+            // Initialize active date
+            activateSelectedDate();
+            
+            // Handle date item clicks
+            document.querySelectorAll('.date-item').forEach(function(dateItem) {
+                dateItem.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    let selectedDate = this.getAttribute('data-date');
+                    if (selectedDate === selectedDateStr) {
+                        return; // Date already active
+                    }
+                    
+                    // Redirect to same page with new date parameter
+                    let currentUrl = new URL(window.location.href);
+                    currentUrl.searchParams.set('date', selectedDate);
+                    window.location.href = currentUrl.toString();
+                });
+            });
+
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html> 

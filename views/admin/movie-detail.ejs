@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin/sidebar.ejs', { path: '/admin/movies' }) %>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Movie Details</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/admin/movies" class="btn btn-sm btn-secondary me-2">
+                            <i class="fas fa-arrow-left"></i> Back to Movies
+                        </a>
+                        <a href="/admin/movies/<%= movie._id %>/edit" class="btn btn-sm btn-primary me-2">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form action="/admin/movies/<%= movie._id %>?_method=DELETE" method="POST" class="d-inline" 
+                              onsubmit="return confirm('Are you sure you want to delete this movie? This action cannot be undone.')">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <img src="/uploads/movies/<%= movie.image %>" class="card-img-top" alt="<%= movie.title %>">
+                            <div class="card-body">
+                                <h5 class="card-title"><%= movie.title %></h5>
+                                <p class="card-text"><span class="badge bg-primary"><%= movie.status %></span></p>
+                                <% if (movie.recommended) { %>
+                                    <p><span class="badge bg-success">Featured</span></p>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h4 class="card-title">Details</h4>
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row" style="width: 150px;">Title</th>
+                                            <td><%= movie.title %></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Category</th>
+                                            <td><%= movie.category %></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Language</th>
+                                            <td><%= movie.language %></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Duration</th>
+                                            <td><%= movie.duration %></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Rating</th>
+                                            <td>
+                                                <span class="text-warning">
+                                                    <% for (let i = 1; i <= 5; i++) { %>
+                                                        <% if (i <= Math.round(movie.ratings / 2)) { %>
+                                                            <i class="fas fa-star"></i>
+                                                        <% } else if (i - 0.5 <= Math.round(movie.ratings / 2)) { %>
+                                                            <i class="fas fa-star-half-alt"></i>
+                                                        <% } else { %>
+                                                            <i class="far fa-star"></i>
+                                                        <% } %>
+                                                    <% } %>
+                                                </span>
+                                                <%= movie.ratings %>/10
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Release Date</th>
+                                            <td><%= new Date(movie.releaseDate).toLocaleDateString('en-US', { 
+                                                year: 'numeric', 
+                                                month: 'long', 
+                                                day: 'numeric' 
+                                            }) %></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Status</th>
+                                            <td><span class="badge bg-<%= movie.status === 'Upcoming' ? 'warning' : 'success' %>">
+                                                <%= movie.status %>
+                                            </span></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Featured</th>
+                                            <td><%= movie.recommended ? 'Yes' : 'No' %></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h4 class="card-title">Description</h4>
+                                <p class="card-text"><%= movie.description %></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title">Background Image</h4>
+                                <img src="/uploads/movies/<%= movie.backgroundImage %>" class="img-fluid rounded" alt="<%= movie.title %> background">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <%- include('../partials/admin/footer.ejs') %>
+</body>
+</html> 

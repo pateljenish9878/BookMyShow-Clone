@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="/images/favicon.png">
+    <title>Select Seats - <%= movie.title %></title>
+    <style>
+        .seat-selection {
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .theater-info h2 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+        }
+        .theater-info p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .show-info {
+            text-align: right;
+        }
+        .show-date, .show-time {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .screen-container {
+            margin: 30px 0;
+            text-align: center;
+        }
+        .screen {
+            width: 80%;
+            height: 20px;
+            margin: 0 auto 40px;
+            background: #e0e0e0;
+            border-radius: 50% / 10px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        .screen::before {
+            content: "SCREEN";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .seat-map {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        .seat-row {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .row-label {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #666;
+        }
+        .seat {
+            width: 30px;
+            height: 30px;
+            border-radius: 5px 5px 0 0;
+            background: #a3a3a3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            position: relative;
+        }
+        .seat.premium {
+            background: #f1c40f;
+        }
+        .seat.selected {
+            background: #f84464;
+        }
+        .seat.booked {
+            background: #282828;
+            cursor: not-allowed;
+        }
+        .seat::after {
+            content: "";
+            position: absolute;
+            bottom: -3px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0 0 2px 2px;
+        }
+        .seat-gap {
+            width: 30px;
+            height: 30px;
+        }
+
+        .seat-categories {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .seat-category {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .seat-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px 5px 0 0;
+            position: relative;
+        }
+        .seat-indicator::after {
+            content: "";
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 0 0 2px 2px;
+        }
+        .seat-indicator.available {
+            background: #a3a3a3;
+        }
+        .seat-indicator.premium {
+            background: #f1c40f;
+        }
+        .seat-indicator.selected {
+            background: #f84464;
+        }
+        .seat-indicator.booked {
+            background: #282828;
+        }
+
+        .price-summary {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .price-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .price-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 18px;
+            padding-top: 10px;
+            border-top: 1px dashed #e0e0e0;
+        }
+
+        .continue-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #f84464;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .continue-btn:hover {
+            background: #e03c5c;
+        }
+        .continue-btn:disabled {
+            background: #e0e0e0;
+            cursor: not-allowed;
+        }
+
+        .seat-count-display {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        .seat-numbers {
+            font-weight: bold;
+            color: #f84464;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="top-header">
+                <div>
+                    <a href="/"><img src="/images/bookmyshow-logo-vector.png" class="bookmyshow" alt="BookMyShow"></a>
+                </div>
+                <div>
+                    <% if (locals.user) { %>
+                        <div class="user-dropdown">
+                            <div class="user-dropdown-toggle">
+                                <div class="user-avatar">
+                                    <% if (user.profilePic && user.profilePic !== 'default-profile.png') { %>
+                                        <img src="/uploads/users/<%= user.profilePic %>" alt="<%= user.name %>">
+                                    <% } else { %>
+                                        <div class="user-avatar-placeholder">
+                                            <%= user.name.charAt(0).toUpperCase() %>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <span class="user-name">Hi, <%= user.name.split(' ')[0] %></span>
+                                <i class="fas fa-chevron-down" style="font-size: 12px; color: #777;"></i>
+                            </div>
+                            <div class="user-dropdown-content">
+                                <a href="/user/profile" class="dropdown-item">
+                                    <i class="fas fa-user"></i>
+                                    View Profile
+                                </a>
+                                <a href="/user/change-password" class="dropdown-item">
+                                    <i class="fas fa-key"></i>
+                                    Change Password
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="/logout" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <button class="sign-in"><a href="/user/login">Sign In</a></button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: #f5f5f5;">
+            <div class="bottom-header">
+                <div>
+                    <ul>
+                        <li style="padding-left: 0;"><a href="/all-movies">Movies</a></li>
+                        <li><a href="/bookings">Your Bookings</a></li>
+                        <li><a href="/coming-soon">Events</a></li>
+                        <li><a href="/coming-soon">Plays</a></li>
+                        <li><a href="/coming-soon">Sports</a></li>
+                        <li><a href="/coming-soon">Activities</a></li>
+                    </ul>
+                </div>
+               
+            </div>
+        </div>
+    </header>
+
+    <main class="seat-selection">
+        <!-- Booking Header -->
+        <div class="booking-header">
+            <div class="theater-info">
+                <h2><%= theater.name %></h2>
+                <p><%= theater.location %>, <%= theater.city %></p>
+            </div>
+            <div class="show-info">
+                <% 
+                // Ensure we display the exact date that was selected
+                let displayDate = date;
+                
+                // Format the date in a user-friendly way if needed
+                try {
+                    if (displayDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        // It's in ISO format, we can format it nicely
+                        const [year, month, day] = displayDate.split('-');
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        displayDate = `${parseInt(day)} ${months[parseInt(month)-1]} ${year}`;
+                    }
+                } catch (e) {
+                    // If any error occurs, fall back to the original date
+                    console.error('Error formatting date:', e);
+                }
+                %>
+                <div class="show-date"><%= displayDate %></div>
+                <div class="show-time"><%= time %></div>
+            </div>
+        </div>
+
+        <!-- Screen -->
+        <div class="screen-container">
+            <div class="screen"></div>
+        </div>
+
+        <!-- Seat Map -->
+        <div class="seat-map">
+            <% 
+            // Use theater's actual seat layout configuration if available
+            let rows = [];
+            let seatsPerRow = 20; // Default fallback
+            
+            // Use prices passed directly from controller
+            const standardPrice = locals.standardPrice || 250;
+            const premiumPrice = locals.premiumPrice || 350;
+            
+            console.log("Rendering seat selection with prices:", standardPrice, premiumPrice);
+            
+            if (theater && theater.screens && theater.screens.length > 0) {
+                // Find the correct screen for this show
+                // Don't try to require the model in the template
+                const screenId = theater.screens && theater.screens.length > 0 ? theater.screens[0]._id : null;
+                
+                // Use the first screen's layout as a fallback
+                const defaultScreen = theater.screens[0];
+                if (defaultScreen && defaultScreen.seatLayout) {
+                    // Parse rows if stored as comma-separated string
+                    if (typeof defaultScreen.seatLayout.rows === 'string') {
+                        rows = defaultScreen.seatLayout.rows.split(',').map(row => row.trim());
+                    } else if (Array.isArray(defaultScreen.seatLayout.rows)) {
+                        rows = defaultScreen.seatLayout.rows;
+                    }
+                    
+                    // Get seats per row (columns) from layout
+                    if (defaultScreen.seatLayout.columns) {
+                        seatsPerRow = parseInt(defaultScreen.seatLayout.columns) || 20;
+                    }
+                }
+            }
+            
+            // If no specific layout found, use default rows
+            if (!rows.length) {
+                rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+            }
+            
+            console.log(`Using theater configuration: ${rows.length} rows with ${seatsPerRow} seats per row`);
+            
+            // Ensure bookedSeats is an array
+            const bookedSeatsList = Array.isArray(bookedSeats) ? bookedSeats : [];
+            console.log("Booked seats:", bookedSeatsList);
+            
+            rows.forEach(row => { 
+            %>
+                <div class="seat-row">
+                    <div class="row-label"><%= row %></div>
+                    <% for(let i = 1; i <= seatsPerRow; i++) { 
+                        const seatId = `${row}${i}`;
+                        const isBooked = bookedSeatsList.includes(seatId);
+                        // Define premium rows (usually the back rows or the middle section)
+                        // Consider the last 40% of rows as premium
+                        const rowIndex = rows.indexOf(row);
+                        const isPremium = rowIndex >= Math.ceil(rows.length * 0.6);
+                        
+                        // Calculate the seat price 
+                        const seatPrice = isPremium ? (premiumPrice || 300) : (standardPrice || 200);
+                        
+                        // Add gap after every 4 seats for better layout
+                        if (i % 5 === 0 && i < seatsPerRow) { %>
+                            <div class="seat-gap"></div>
+                        <% } %>
+                        
+                        <div class="seat <%= isPremium ? 'premium' : '' %> <%= isBooked ? 'booked' : '' %>" 
+                             data-seat="<%= seatId %>" 
+                             data-price="<%= seatPrice %>">
+                            <%= i %>
+                        </div>
+                    <% } %>
+                </div>
+            <% }) %>
+        </div>
+
+        <!-- Seat Categories -->
+        <div class="seat-categories">
+            <div class="seat-category">
+                <div class="seat-indicator available"></div>
+                <span>Available</span>
+            </div>
+            <div class="seat-category">
+                <div class="seat-indicator selected"></div>
+                <span>Selected</span>
+            </div>
+            <div class="seat-category">
+                <div class="seat-indicator booked"></div>
+                <span>Booked</span>
+            </div>
+            <div class="seat-category">
+                <div class="seat-indicator premium"></div>
+                <span>Premium (₹<%= premiumPrice %>)</span>
+            </div>
+        </div>
+
+        <!-- Selected Seats Display -->
+        <div class="seat-count-display">
+            <span id="seatCountText">No seats selected</span>
+            <div id="selectedSeatsDisplay" class="seat-numbers"></div>
+        </div>
+
+        <!-- Price Summary -->
+        <div class="price-summary">
+            <h3>Booking Summary</h3>
+            <div class="price-details">
+                <span>Standard Seats (<span id="standardCount">0</span> × ₹<span id="standardPrice"><%= standardPrice %></span>)</span>
+                <span>₹<span id="standardTotal">0</span></span>
+            </div>
+            <div class="price-details">
+                <span>Premium Seats (<span id="premiumCount">0</span> × ₹<span id="premiumPrice"><%= premiumPrice %></span>)</span>
+                <span>₹<span id="premiumTotal">0</span></span>
+            </div>
+            <div class="price-details">
+                <span>Convenience Fee</span>
+                <span>₹<span id="convenienceFee">0</span></span>
+            </div>
+            <div class="price-total">
+                <span>Total Amount</span>
+                <span>₹<span id="totalAmount">0</span></span>
+            </div>
+        </div>
+
+        <!-- Checkout Button -->
+        <form action="/bookings/confirm-booking" method="POST" id="bookingForm">
+            <input type="hidden" name="movieId" value="<%= movie._id %>">
+            <input type="hidden" name="theaterId" value="<%= theater._id %>">
+            <input type="hidden" name="date" value="<%= date %>">
+            <input type="hidden" name="time" value="<%= time %>">
+            <input type="hidden" name="selectedSeats" id="selectedSeatsInput">
+            <input type="hidden" name="standardPrice" value="<%= standardPrice %>">
+            <input type="hidden" name="premiumPrice" value="<%= premiumPrice %>">
+            <input type="hidden" name="totalPrice" id="totalPriceInput">
+            <input type="hidden" name="seatPrices" id="seatPricesInput">
+            <input type="hidden" name="screenId" value="<%= typeof screenId !== 'undefined' ? screenId : '' %>">
+            <input type="hidden" name="screenName" value="<%= typeof screenName !== 'undefined' ? screenName : 'Screen 1' %>">
+            <input type="hidden" name="customerPhone" id="customerPhoneInput" value="">
+            
+            <button type="submit" class="continue-btn" id="continueBtn" disabled>Proceed to Payment</button>
+        </form>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="line"></div>
+                <div><img src="/images/footer-logo.svg" alt="BookMyShow Logo"></div>
+                <div class="line"></div>
+            </div>
+            <div class="social-icons-strip">
+                <a href="https://www.facebook.com" target="_blank"><img src="/images/facebook.png" alt="Facebook"></a>
+                <a href="https://www.x.com" target="_blank"><img src="/images/twitter.png" alt="Twitter"></a>
+                <a href="https://www.instagram.com" target="_blank"><img src="/images/instagram.png" alt="Instagram"></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="/images/youtube.png" alt="YouTube"></a>
+                <a href="https://www.pinterest.com" target="_blank"><img src="/images/pintrest.png" alt="Pinterest"></a>
+                <a href="https://www.linkedin.com" target="_blank"><img style="margin-right: 0;" src="/images/linkedin.png" alt="LinkedIn"></a>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-text">
+                    <p>Copyright 2025 © Bigtree Entertainment Pvt. Ltd. All Rights Reserved.</p>
+                    <p>The content and images used on this site are copyright protected and copyrights vests with the respective owners. The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. Unauthorized use is prohibited and punishable by law.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize seat selection
+            let selectedSeats = [];
+            const standardPrice = <%= standardPrice %>;
+            const premiumPrice = <%= premiumPrice %>;
+            const continueBtn = document.getElementById('continueBtn');
+            
+            // Calculate total function
+            function updateTotal() {
+                let total = 0;
+                let selectedCount = selectedSeats.length;
+                
+                selectedSeats.forEach(seat => {
+                    const seatElement = document.getElementById(seat);
+                    const isPremium = seatElement.classList.contains('premium');
+                    total += isPremium ? premiumPrice : standardPrice;
+                });
+                
+                document.getElementById('seatCountText').textContent = selectedCount > 0 ? `${selectedCount} seat${selectedCount > 1 ? 's' : ''} selected` : 'No seats selected';
+                document.getElementById('selectedSeatsDisplay').textContent = selectedSeats.join(', ');
+                
+                // Count standard and premium seats
+                const standard = selectedSeats.filter(s => !isPremiumSeat(s));
+                const premium = selectedSeats.filter(s => isPremiumSeat(s));
+                
+                // Update seat counts and subtotals
+                document.getElementById('standardCount').textContent = standard.length;
+                document.getElementById('premiumCount').textContent = premium.length;
+                document.getElementById('standardTotal').textContent = standard.length * standardPrice;
+                document.getElementById('premiumTotal').textContent = premium.length * premiumPrice;
+                
+                // Calculate convenience fee (5% of subtotal)
+                const subtotal = (standard.length * standardPrice) + (premium.length * premiumPrice);
+                const fee = Math.round(subtotal * 0.05);
+                document.getElementById('convenienceFee').textContent = fee;
+                
+                // Calculate total
+                total = subtotal + fee;
+                document.getElementById('totalAmount').textContent = '₹' + total;
+                
+                // Update hidden inputs
+                document.getElementById('selectedSeatsInput').value = selectedSeats.join(',');
+                document.getElementById('totalPriceInput').value = total;
+                document.getElementById('seatPricesInput').value = JSON.stringify(selectedSeats.map(s => ({ seat: s, price: getSeatPrice(s) })));
+                
+                // Enable/disable continue button
+                if (selectedSeats.length > 0) {
+                    continueBtn.disabled = false;
+                    continueBtn.classList.remove('disabled');
+                } else {
+                    continueBtn.disabled = true;
+                    continueBtn.classList.add('disabled');
+                }
+            }
+            
+            // Handle seat clicks
+            document.querySelectorAll('.seat:not(.booked)').forEach(seat => {
+                seat.addEventListener('click', function() {
+                    const seatId = this.getAttribute('data-seat');
+                    const price = Number(this.getAttribute('data-price'));
+                    const isPremium = this.classList.contains('premium');
+                    
+                    if (this.classList.contains('selected')) {
+                        // Deselect the seat
+                        this.classList.remove('selected');
+                        selectedSeats = selectedSeats.filter(s => s !== seatId);
+                    } else {
+                        // Select the seat
+                        this.classList.add('selected');
+                        selectedSeats.push(seatId);
+                    }
+                    
+                    updateTotal();
+                });
+            });
+            
+            // Initialize the total
+            updateTotal();
+        });
+    </script>
+</body>
+</html> 

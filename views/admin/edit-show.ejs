@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin/sidebar.ejs', { path: '/admin/shows' }) %>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Edit Show</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/admin/shows" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Shows
+                        </a>
+                    </div>
+                </div>
+                
+                <% if (locals.errors && errors.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <ul class="mb-0">
+                            <% errors.forEach(error => { %>
+                                <li><%= error.msg %></li>
+                            <% }); %>
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/admin/shows/<%= show._id %>?_method=PUT" method="POST" id="editShowForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Movie & Theater</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="movieId" class="form-label">Movie*</label>
+                                        <select class="form-select" id="movieId" name="movieId" required>
+                                            <option value="">Select Movie</option>
+                                            <% if (movies && movies.length > 0) { %>
+                                                <% movies.forEach(movie => { %>
+                                                    <% 
+                                                    let isSelected = false;
+                                                    if (show.movieId) {
+                                                        if (typeof show.movieId === 'object' && show.movieId._id) {
+                                                            isSelected = show.movieId._id.toString() === movie._id.toString();
+                                                        } else {
+                                                            isSelected = show.movieId.toString() === movie._id.toString();
+                                                        }
+                                                    }
+                                                    %>
+                                                    <option value="<%= movie._id %>" <%= isSelected ? 'selected' : '' %>>
+                                                        <%= movie.title %> (<%= movie.status %>)
+                                                    </option>
+                                                <% }); %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="theaterId" class="form-label">Theater*</label>
+                                        <select class="form-select" id="theaterId" name="theaterId" required>
+                                            <option value="">Select Theater</option>
+                                            <% if (theaters && theaters.length > 0) { %>
+                                                <% theaters.forEach(theater => { %>
+                                                    <% 
+                                                    let isSelected = false;
+                                                    if (show.theaterId) {
+                                                        if (typeof show.theaterId === 'object' && show.theaterId._id) {
+                                                            isSelected = show.theaterId._id.toString() === theater._id.toString();
+                                                        } else {
+                                                            isSelected = show.theaterId.toString() === theater._id.toString();
+                                                        }
+                                                    }
+                                                    %>
+                                                    <option value="<%= theater._id %>" <%= isSelected ? 'selected' : '' %>>
+                                                        <%= theater.name %> (<%= theater.city %>)
+                                                    </option>
+                                                <% }); %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="screenId" class="form-label">Screen*</label>
+                                        <select class="form-select" id="screenId" name="screenId" required>
+                                            <option value="">Select Theater First</option>
+                                            <% if (show.screenId) { %>
+                                                <option value="<%= show.screenId._id %>" selected>
+                                                    <%= show.screenId.name %> (<%= show.screenId.type || 'Standard' %>)
+                                                </option>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Show Details</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="showDate" class="form-label">Show Date*</label>
+                                        <input type="date" class="form-control" id="showDate" name="showDate" 
+                                               value="<%= show.showDate ? new Date(show.showDate).toISOString().split('T')[0] : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Show Times*</label>
+                                        <div id="showTimesContainer">
+                                            <% 
+                                            // Prepare show times array combining showTime and additionalTimes
+                                            let allShowTimes = [];
+                                            if (show.showTimes && Array.isArray(show.showTimes) && show.showTimes.length > 0) {
+                                                allShowTimes = show.showTimes;
+                                            } else if (show.showTime) {
+                                                allShowTimes.push(show.showTime);
+                                                if (show.additionalTimes && Array.isArray(show.additionalTimes)) {
+                                                    allShowTimes = allShowTimes.concat(show.additionalTimes);
+                                                }
+                                            }
+                                            
+                                            // Ensure we have at least one empty input if no times are set
+                                            if (allShowTimes.length === 0) {
+                                                allShowTimes.push('');
+                                            }
+                                            %>
+                                            
+                                            <% allShowTimes.forEach((time, index) => { %>
+                                                <div class="input-group mb-2">
+                                                    <input type="time" class="form-control" name="showTimes[]" 
+                                                           value="<%= typeof time === 'string' ? time.substring(0, 5) : '' %>" required>
+                                                    <button type="button" class="btn btn-danger remove-time" style="display: <%= allShowTimes.length > 1 ? 'block' : 'none' %>;">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            <% }); %>
+                                        </div>
+                                        <button type="button" id="addTimeBtn" class="btn btn-sm btn-secondary mt-1">
+                                            <i class="fas fa-plus"></i> Add Another Time
+                                        </button>
+                                        <small class="form-text text-muted">
+                                            Set multiple show times for the same movie, screen, and date
+                                        </small>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="price" class="form-label">Ticket Price (₹)*</label>
+                                        <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" 
+                                               value="<%= show.price %>" required>
+                                    </div>
+                                    
+                                    <% if (show.bookedSeats && show.bookedSeats.length > 0) { %>
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        This show has <%= show.bookedSeats.length %> seats booked.
+                                    </div>
+                                    <% } %>
+                                </div>
+                                
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Show
+                                    </button>
+                                    <a href="/admin/shows" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <%- include('../partials/admin/footer.ejs') %>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form elements
+            const form = document.getElementById('editShowForm');
+            const theaterSelect = document.getElementById('theaterId');
+            const screenSelect = document.getElementById('screenId');
+            const showTimesContainer = document.getElementById('showTimesContainer');
+            
+            // Function to fetch screens based on selected theater
+            async function fetchScreens(theaterId) {
+                if (!theaterId) {
+                    screenSelect.innerHTML = '<option value="">Select Theater First</option>';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`/admin/theaters/${theaterId}/screens`);
+                    const data = await response.json();
+                    
+                    if (data.screens && data.screens.length > 0) {
+                        let options = '<option value="">Select Screen</option>';
+                        data.screens.forEach(screen => {
+                            const screenType = screen.type || 'Standard';
+                            const selected = screen._id === currentScreenId ? 'selected' : '';
+                            options += `<option value="${screen._id}" ${selected}>${screen.name} (${screenType})</option>`;
+                        });
+                        screenSelect.innerHTML = options;
+                    } else {
+                        screenSelect.innerHTML = '<option value="">No screens available</option>';
+                    }
+                } catch (error) {
+                    console.error('Error fetching screens:', error);
+                    screenSelect.innerHTML = '<option value="">Error loading screens</option>';
+                }
+            }
+            
+            // Event listener for theater select change
+            theaterSelect.addEventListener('change', function() {
+                fetchScreens(this.value);
+            });
+            
+            // Function to add a new show time input
+            function addShowTimeInput() {
+                const timeInputs = document.querySelectorAll('[name="showTimes[]"]');
+                
+                // Show remove buttons if there will be more than one time slot
+                if (timeInputs.length === 1) {
+                    document.querySelector('.remove-time').style.display = 'block';
+                }
+                
+                const newTimeGroup = document.createElement('div');
+                newTimeGroup.className = 'input-group mb-2';
+                newTimeGroup.innerHTML = `
+                    <input type="time" class="form-control" name="showTimes[]" required>
+                    <button type="button" class="btn btn-danger remove-time">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                showTimesContainer.appendChild(newTimeGroup);
+                
+                // Add event listener to the new remove button
+                newTimeGroup.querySelector('.remove-time').addEventListener('click', function() {
+                    newTimeGroup.remove();
+                    
+                    // Hide the last remove button if only one time input remains
+                    const remainingInputs = document.querySelectorAll('[name="showTimes[]"]');
+                    if (remainingInputs.length === 1) {
+                        document.querySelector('.remove-time').style.display = 'none';
+                    }
+                });
+            }
+            
+            // Add time button click handler
+            addTimeBtn.addEventListener('click', addShowTimeInput);
+            
+            // Init remove buttons for existing showtime entries
+            document.querySelectorAll('.remove-time').forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.input-group').remove();
+                    
+                    // Hide the last remove button if only one time input remains
+                    const remainingInputs = document.querySelectorAll('[name="showTimes[]"]');
+                    if (remainingInputs.length === 1) {
+                        document.querySelector('.remove-time').style.display = 'none';
+                    }
+                });
+            });
+            
+            // Initial fetch if theater is already selected
+            if (theaterSelect.value) {
+                console.log("Loading screens for theater:", theaterSelect.value);
+                fetchScreens(theaterSelect.value);
+            }
+            
+            // Monitor form submission
+            const form = document.getElementById('editShowForm');
+            form.addEventListener('submit', function(event) {
+                // For debugging only - do not use in production
+                event.preventDefault();
+                
+                console.log('Edit form data being submitted:');
+                const formData = new FormData(form);
+                
+                for (const [key, value] of formData.entries()) {
+                    console.log(`${key}: ${value}`);
+                }
+                
+                // Check for multiple show times
+                const showTimes = formData.getAll('showTimes[]');
+                console.log('All showTimes values:', showTimes);
+                
+                // Now submit the form programmatically
+                setTimeout(() => form.submit(), 100);
+            });
+        });
+    </script>
+
+    <!-- For debugging purposes -->
+    <script>
+        console.log('Show data from server:');
+        console.log('Show ID: <%= typeof show._id === "object" ? show._id.toString() : show._id %>');
+        console.log('Movie ID: <%= typeof show.movieId === "object" ? show.movieId._id : show.movieId %>');
+        console.log('Theater ID: <%= typeof show.theaterId === "object" ? show.theaterId._id : show.theaterId %>');
+        console.log('Show Times: <%= JSON.stringify(show.showTimes || []) %>');
+        console.log('Show Time (legacy): <%= show.showTime %>');
+        console.log('Additional Times (legacy): <%= JSON.stringify(show.additionalTimes || []) %>');
+        
+        <% if (movies && movies.length > 0) { %>
+            console.log('Available movies:');
+            <% movies.forEach(movie => { %>
+                console.log('<%= movie._id %> - <%= movie.title %>');
+                const isSelected = '<%= show.movieId && typeof show.movieId === "object" ? show.movieId._id.toString() : (show.movieId ? show.movieId.toString() : "") %>' === '<%= movie._id.toString() %>';
+                console.log('Is selected:', isSelected);
+            <% }); %>
+        <% } %>
+    </script>
+
+    <!-- Add this script right before the closing body tag -->
+    <script>
+        // Run after page is fully loaded
+        window.addEventListener('load', function() {
+            console.log('Page fully loaded, fixing selections');
+            
+            // Get original IDs
+            const originalMovieId = '<%= show.movieId && typeof show.movieId === "object" ? show.movieId._id : show.movieId %>';
+            const originalTheaterId = '<%= show.theaterId && typeof show.theaterId === "object" ? show.theaterId._id : show.theaterId %>';
+            const originalScreenId = '<%= show.screenId && typeof show.screenId === "object" ? show.screenId._id : show.screenId %>';
+            
+            console.log('Original values:', {
+                movieId: originalMovieId,
+                theaterId: originalTheaterId,
+                screenId: originalScreenId
+            });
+            
+            // Fix movie selection
+            const movieSelect = document.getElementById('movieId');
+            if (movieSelect && originalMovieId) {
+                console.log('Setting movie to:', originalMovieId);
+                movieSelect.value = originalMovieId;
+            }
+            
+            // Fix theater selection
+            const theaterSelect = document.getElementById('theaterId');
+            if (theaterSelect && originalTheaterId) {
+                console.log('Setting theater to:', originalTheaterId);
+                theaterSelect.value = originalTheaterId;
+                
+                // Trigger change event to load screens
+                const event = new Event('change', { bubbles: true });
+                theaterSelect.dispatchEvent(event);
+            }
+            
+            // After screens are loaded, fix screen selection
+            setTimeout(function() {
+                const screenSelect = document.getElementById('screenId');
+                if (screenSelect && originalScreenId) {
+                    console.log('Setting screen to:', originalScreenId);
+                    screenSelect.value = originalScreenId;
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html> 

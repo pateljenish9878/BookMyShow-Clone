@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin/sidebar.ejs', { path: '/admin/shows' }) %>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Add New Show</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/admin/shows" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Shows
+                        </a>
+                    </div>
+                </div>
+                
+                <% if (locals.errors && errors.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <ul class="mb-0">
+                            <% errors.forEach(error => { %>
+                                <li><%= error.msg %></li>
+                            <% }); %>
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/admin/shows" method="POST" id="showForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Movie & Theater</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="movieId" class="form-label">Movie*</label>
+                                        <select class="form-select" id="movieId" name="movieId" required>
+                                            <option value="">Select Movie</option>
+                                            <% if (movies && movies.length > 0) { %>
+                                                <% movies.forEach(movie => { %>
+                                                    <option value="<%= movie._id %>" <%= locals.formData && formData.movieId === movie._id.toString() ? 'selected' : '' %>>
+                                                        <%= movie.title %> (<%= movie.status %>)
+                                                    </option>
+                                                <% }); %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="theaterId" class="form-label">Theater*</label>
+                                        <select class="form-select" id="theaterId" name="theaterId" required>
+                                            <option value="">Select Theater</option>
+                                            <% if (theaters && theaters.length > 0) { %>
+                                                <% theaters.forEach(theater => { %>
+                                                    <option value="<%= theater._id %>" <%= locals.formData && formData.theaterId === theater._id.toString() ? 'selected' : '' %>>
+                                                        <%= theater.name %> (<%= theater.city %>)
+                                                    </option>
+                                                <% }); %>
+                                            <% } %>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="screenId" class="form-label">Screen*</label>
+                                        <select class="form-select" id="screenId" name="screenId" required>
+                                            <option value="">Select Theater First</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Show Details</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="showDate" class="form-label">Show Date*</label>
+                                        <input type="date" class="form-control" id="showDate" name="showDate" value="<%= locals.formData ? formData.showDate : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Show Times*</label>
+                                        <div id="showTimesContainer">
+                                            <div class="input-group mb-2">
+                                                <input type="time" class="form-control" name="showTimes[]" required>
+                                                <button type="button" class="btn btn-danger remove-time" style="display: none;">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <button type="button" id="addTimeBtn" class="btn btn-sm btn-secondary mt-1">
+                                            <i class="fas fa-plus"></i> Add Another Time
+                                        </button>
+                                        <small class="form-text text-muted">Add multiple show times for this movie, date, and screen</small>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="price" class="form-label">Ticket Price (₹)*</label>
+                                        <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" value="<%= locals.formData ? formData.price : '' %>" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Show
+                                    </button>
+                                    <a href="/admin/shows" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <%- include('../partials/admin/footer.ejs') %>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form validation and handling
+            const form = document.getElementById('showForm');
+            const theaterSelect = document.getElementById('theaterId');
+            const screenSelect = document.getElementById('screenId');
+            const showTimesContainer = document.getElementById('showTimesContainer');
+            const addTimeBtn = document.getElementById('addTimeBtn');
+            
+            // Initialize the first show time field
+            const initialShowTime = document.createElement('div');
+            initialShowTime.className = 'mb-3 show-time-field';
+            initialShowTime.innerHTML = `
+                <div class="input-group">
+                    <input type="time" name="showTimes[]" class="form-control" required>
+                    <button type="button" class="btn btn-outline-danger remove-time">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            showTimesContainer.appendChild(initialShowTime);
+            
+            // Add show time
+            addTimeBtn.addEventListener('click', function() {
+                const timeField = document.createElement('div');
+                timeField.className = 'mb-3 show-time-field';
+                timeField.innerHTML = `
+                    <div class="input-group">
+                        <input type="time" name="showTimes[]" class="form-control" required>
+                        <button type="button" class="btn btn-outline-danger remove-time">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+                showTimesContainer.appendChild(timeField);
+                
+                // Attach remove event to new button
+                const removeBtn = timeField.querySelector('.remove-time');
+                removeBtn.addEventListener('click', function() {
+                    showTimesContainer.removeChild(timeField);
+                });
+            });
+            
+            // Remove time button events (for dynamically added ones)
+            showTimesContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-time') || e.target.closest('.remove-time')) {
+                    const timeField = e.target.closest('.show-time-field');
+                    if (timeField && showTimesContainer.children.length > 1) {
+                        showTimesContainer.removeChild(timeField);
+                    }
+                }
+            });
+            
+            // Get screens for the selected theater
+            theaterSelect.addEventListener('change', function() {
+                const theaterId = this.value;
+                if (!theaterId) {
+                    screenSelect.innerHTML = '<option value="">Select a theater first</option>';
+                    screenSelect.disabled = true;
+                    return;
+                }
+                
+                fetch(`/admin/theaters/${theaterId}/screens`)
+                    .then(response => response.json())
+                    .then(data => {
+                        screenSelect.innerHTML = '';
+                        screenSelect.disabled = false;
+                        
+                        data.screens.forEach(screen => {
+                            const option = document.createElement('option');
+                            option.value = screen._id;
+                            option.textContent = screen.name;
+                            screenSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        alert('Error loading screens for this theater');
+                    });
+            });
+            
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                // Validate show times (must have at least one)
+                const showTimes = document.querySelectorAll('input[name="showTimes[]"]');
+                if (showTimes.length === 0) {
+                    e.preventDefault();
+                    alert('Please add at least one show time');
+                    return;
+                }
+                
+                // Final validation
+                if (!form.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                
+                form.classList.add('was-validated');
+            });
+        });
+    </script>
+</body>
+</html> 

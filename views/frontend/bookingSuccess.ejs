@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" href="/images/favicon.png">
+    <title>Booking Confirmed - BookMyShow</title>
+    <style>
+        .booking-success {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: #43a047;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+        }
+        .booking-details {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        .booking-id {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .movie-details {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .movie-poster {
+            width: 120px;
+            height: 180px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+        .movie-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .movie-info h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .movie-meta {
+            display: flex;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .movie-meta > div {
+            margin-right: 15px;
+        }
+        .show-details {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .show-details > div {
+            margin-right: 30px;
+            margin-bottom: 15px;
+        }
+        .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .value {
+            font-weight: bold;
+        }
+        .seats-info {
+            margin-bottom: 20px;
+        }
+        .ticket-price {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .seat-array {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .seat-tag {
+            background: #f1f1f1;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            background: #f1f1f1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .actions {
+            margin-top: 30px;
+        }
+        .action-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #f84464;
+            color: white;
+            border-radius: 8px;
+            font-weight: bold;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .action-btn:hover {
+            background: #e03c5c;
+            transform: translateY(-2px);
+        }
+        
+        .secondary-btn {
+            background: #5f5f5f;
+            color: white;
+        }
+        
+        .secondary-btn:hover {
+            background: #4a4a4a;
+        }
+        .booking-note {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+        .email-confirmation {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            color: #2e7d32;
+            font-size: 16px;
+        }
+        .price-breakdown {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .price-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .price-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .price-value {
+            font-weight: bold;
+        }
+        .total {
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .price-breakdown {
+                flex-direction: column;
+            }
+            .price-item {
+                margin-bottom: 8px;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+            .price-label {
+                margin-bottom: 0;
+            }
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .booking-details-container, .booking-details-container * {
+                visibility: visible;
+            }
+            .booking-details-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .booking-actions, .header, .footer {
+                display: none !important;
+            }
+            .booking-note {
+                page-break-inside: avoid;
+                margin-top: 20px;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const totalAmount = parseFloat(document.getElementById('totalAmount').textContent.replace('₹', '').trim());
+            
+            // Calculate backwards from total
+            // In confirmBooking, there is a convenience fee of 5% on top of the base price
+            // Total = BasePrice + (BasePrice * 0.05)
+            // Total = BasePrice * 1.05
+            // Therefore, BasePrice = Total / 1.05
+            
+            const basePrice = (totalAmount / 1.05).toFixed(2);
+            const convenienceFee = (totalAmount - basePrice).toFixed(2);
+            
+            document.getElementById('basePrice').textContent = '₹' + basePrice;
+            document.getElementById('serviceFee').textContent = '₹' + convenienceFee;
+            
+            // Hide tax field since it's not used in confirmBooking
+            const taxElement = document.getElementById('tax').parentElement.parentElement;
+            if (taxElement) {
+                taxElement.style.display = 'none';
+            }
+
+            // Print ticket functionality
+            document.getElementById('printTicket').addEventListener('click', function() {
+                const ticketContent = document.querySelector('.booking-details-container');
+                const originalContent = document.body.innerHTML;
+                
+                // Create print-only version
+                document.body.innerHTML = `
+                    <div style="padding: 20px; max-width: 800px; margin: 0 auto;">
+                        <h2 style="text-align: center; margin-bottom: 20px;">Movie Ticket</h2>
+                        ${ticketContent.innerHTML}
+                    </div>
+                `;
+                
+                // Print
+                window.print();
+                
+                // Restore original content
+                document.body.innerHTML = originalContent;
+                
+                // Reinitialize event listeners
+                document.getElementById('printTicket').addEventListener('click', arguments.callee);
+                
+                // Recalculate prices
+                const totalAmount = parseFloat(document.getElementById('totalAmount').textContent.replace('₹', '').trim());
+                const basePrice = (totalAmount / 1.05).toFixed(2);
+                const convenienceFee = (totalAmount - basePrice).toFixed(2);
+                
+                document.getElementById('basePrice').textContent = '₹' + basePrice;
+                document.getElementById('serviceFee').textContent = '₹' + convenienceFee;
+                
+                // Hide tax field if it exists
+                const taxElement = document.getElementById('tax').parentElement.parentElement;
+                if (taxElement) {
+                    taxElement.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="top-header">
+                <div>
+                    <a href="/"><img src="/images/bookmyshow-logo-vector.png" class="bookmyshow" alt="BookMyShow"></a>
+                </div>
+                
+            </div>
+        </div>
+
+        <div style="background-color: #f5f5f5;">
+            <div class="bottom-header">
+                <div>
+                    <ul>
+                        <li style="padding-left: 0;"><a href="/all-movies">Movies</a></li>
+                        <li><a href="/bookings/all">Your Bookings</a></li>
+                        <li><a href="/coming-soon">Events</a></li>
+                        <li><a href="/coming-soon">Plays</a></li>
+                        <li><a href="/coming-soon">Sports</a></li>
+                        <li><a href="/coming-soon">Activities</a></li>
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
+    </header>
+
+    <main class="booking-success">
+        <div class="success-icon">✓</div>
+        <h1>Booking Confirmed!</h1>
+        <p>Your tickets have been booked successfully.</p>
+        <div class="email-confirmation">
+            <p>We've sent a detailed confirmation to your email address. Please check your inbox.</p>
+        </div>
+        
+        <div class="booking-details-container">
+            <div class="booking-details">
+                <div class="booking-id">
+                    Booking ID: <%= booking.bookingReference %>
+                </div>
+                
+                <div class="movie-details">
+                    <div class="movie-poster">
+                        <% if (booking.movie) { %>
+                            <% if (booking.movie.image) { %>
+                                <img src="/uploads/movies/<%= booking.movie.image %>" alt="<%= booking.movie.title %>" onerror="this.src='/images/default-movie.jpg'">
+                            <% } else if (booking.movie.imageUrl) { %>
+                                <img src="/uploads/movies/<%= booking.movie.imageUrl %>" alt="<%= booking.movie.title %>" onerror="this.src='/images/default-movie.jpg'">
+                            <% } else if (booking.movie.posterUrl) { %>
+                                <img src="/uploads/movies/<%= booking.movie.posterUrl %>" alt="<%= booking.movie.title %>" onerror="this.src='/images/default-movie.jpg'">
+                            <% } else { %>
+                                <img src="/images/default-movie.jpg" alt="<%= booking.movie.title || 'Movie poster' %>">
+                            <% } %>
+                        <% } else { %>
+                            <img src="/images/default-movie.jpg" alt="Movie poster">
+                        <% } %>
+                    </div>
+                    <div class="movie-info">
+                        <h2><%= booking.movie ? booking.movie.title : 'Movie' %></h2>
+                        <div class="movie-meta">
+                            <div><%= booking.movie ? booking.movie.language : '' %></div>
+                            <div><%= booking.movie && booking.movie.certificationType ? booking.movie.certificationType : '' %></div>
+                            <div><%= booking.movie && booking.movie.duration ? (booking.movie.duration + (booking.movie.duration.toString().includes('mins') ? '' : ' mins')) : '' %></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="show-details">
+                    <div>
+                        <div class="label">Theater</div>
+                        <div class="value"><%= booking.theater ? booking.theater.name : 'Theater' %></div>
+                    </div>
+                    <div>
+                        <div class="label">Location</div>
+                        <div class="value"><%= booking.theater && booking.theater.location ? booking.theater.location : 'Location' %></div>
+                    </div>
+                    <% if (booking.screen && booking.screen.name) { %>
+                    <div>
+                        <div class="label">Screen</div>
+                        <div class="value"><%= booking.screen.name %></div>
+                    </div>
+                    <% } %>
+                    <div>
+                        <div class="label">Date</div>
+                        <div class="value">
+                            <% 
+                            try {
+                                // Handle date display without timezone conversion
+                                const rawDate = booking.showDate;
+                                let formattedDate;
+                                
+                                if (typeof rawDate === 'string' && rawDate.includes('-')) {
+                                    // For YYYY-MM-DD format
+                                    const [year, month, day] = rawDate.split('-');
+                                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                    
+                                    // Create date object with local timezone
+                                    const dateObj = new Date(year, month-1, day);
+                                    const weekday = weekdays[dateObj.getDay()];
+                                    const monthName = months[dateObj.getMonth()];
+                                    
+                                    formattedDate = `${weekday}, ${monthName} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+                                } else {
+                                    // Fallback to original code
+                                    formattedDate = new Date(booking.showDate).toLocaleDateString('en-US', { 
+                                        weekday: 'short', 
+                                        month: 'short', 
+                                        day: 'numeric', 
+                                        year: 'numeric' 
+                                    });
+                                }
+                                
+                                %><%= formattedDate %><% 
+                            } catch (e) { 
+                                %><%= booking.showDate %><% 
+                            } 
+                            %>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="label">Time</div>
+                        <div class="value"><%= booking.showTime %></div>
+                    </div>
+                </div>
+                
+                <div class="seats-info">
+                    <div class="label">Seats</div>
+                    <div class="seat-array">
+                        <% booking.seats.forEach(seat => { %>
+                            <div class="seat-tag"><%= seat %></div>
+                        <% }) %>
+                    </div>
+                </div>
+                
+                <div class="ticket-price">
+                    <div class="price-breakdown">
+                        <div class="price-item">
+                            <span class="price-label">Base Price:</span>
+                            <span id="basePrice" class="price-value">₹<%= booking.basePrice || (booking.totalAmount ? Math.round(booking.totalAmount / 1.05) : 0) %></span>
+                        </div>
+                        <div class="price-item">
+                            <span class="price-label">Convenience Fee (5%):</span>
+                            <span id="serviceFee" class="price-value">₹<%= booking.convenienceFee || (booking.totalAmount ? Math.round(booking.totalAmount - (booking.totalAmount / 1.05)) : 0) %></span>
+                        </div>
+                        <div class="price-item total">
+                            <span class="price-label">Total Amount:</span>
+                            <span id="totalAmount" class="price-value">₹<%= booking.totalAmount %></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="qr-code">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BOOKREF:<%= booking.bookingReference %>" alt="Booking QR Code">
+                </div>
+            </div>
+        </div>
+        
+        <div class="booking-actions">
+            <a href="/bookings/all" class="action-btn secondary-btn">View All Bookings</a>
+        </div>
+        
+        <div class="booking-note">
+            <p>Please arrive at least 15 minutes before the show time. Show your booking ID or scan the QR code at the counter to collect your tickets.</p>
+            <p>If you don't see our email in your inbox, please check your spam folder.</p>
+            <p>For any queries, please contact customer support.</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="line"></div>
+                <div><img src="/images/footer-logo.svg" alt="BookMyShow Logo"></div>
+                <div class="line"></div>
+            </div>
+            <div class="social-icons-strip">
+                <a href="https://www.facebook.com" target="_blank"><img src="/images/facebook.png" alt="Facebook"></a>
+                <a href="https://www.x.com" target="_blank"><img src="/images/twitter.png" alt="Twitter"></a>
+                <a href="https://www.instagram.com" target="_blank"><img src="/images/instagram.png" alt="Instagram"></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="/images/youtube.png" alt="YouTube"></a>
+                <a href="https://www.pinterest.com" target="_blank"><img src="/images/pintrest.png" alt="Pinterest"></a>
+                <a href="https://www.linkedin.com" target="_blank"><img style="margin-right: 0;" src="/images/linkedin.png" alt="LinkedIn"></a>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-text">
+                    <p>Copyright 2025 © Bigtree Entertainment Pvt. Ltd. All Rights Reserved.</p>
+                    <p>The content and images used on this site are copyright protected and copyrights vests with the respective owners. The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. Unauthorized use is prohibited and punishable by law.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

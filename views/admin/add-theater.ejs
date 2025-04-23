@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin/sidebar.ejs', { path: '/admin/theaters' }) %>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Add New Theater</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/admin/theaters" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Theaters
+                        </a>
+                    </div>
+                </div>
+                
+                <% if (locals.errors && errors.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <ul class="mb-0">
+                            <% errors.forEach(error => { %>
+                                <li><%= error.msg %></li>
+                            <% }); %>
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/admin/theaters" method="POST" enctype="multipart/form-data">
+                            <div class="row">
+                                <!-- Basic Information -->
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Basic Information</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Theater Name*</label>
+                                        <input type="text" class="form-control" id="name" name="name" value="<%= locals.formData ? formData.name : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="location" class="form-label">Location/Address*</label>
+                                        <input type="text" class="form-control" id="location" name="location" value="<%= locals.formData ? formData.location : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="city" class="form-label">City*</label>
+                                        <input type="text" class="form-control" id="city" name="city" value="<%= locals.formData ? formData.city : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="state" class="form-label">State*</label>
+                                        <input type="text" class="form-control" id="state" name="state" value="<%= locals.formData ? formData.state : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="pincode" class="form-label">PIN Code</label>
+                                        <input type="text" class="form-control" id="pincode" name="pincode" value="<%= locals.formData ? formData.pincode : '' %>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="contactNumber" class="form-label">Contact Number</label>
+                                        <input type="text" class="form-control" id="contactNumber" name="contactNumber" value="<%= locals.formData ? formData.contactNumber : '' %>">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="true" <%= locals.formData && formData.status === 'true' ? 'selected' : '' %>>Active</option>
+                                            <option value="false" <%= locals.formData && formData.status === 'false' ? 'selected' : '' %>>Inactive</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="facilities" class="form-label">Facilities</label>
+                                        <input type="text" class="form-control" id="facilities" name="facilities" placeholder="e.g. Parking, Food Court, etc." value="<%= locals.formData ? formData.facilities : '' %>">
+                                        <div class="form-text">Separate multiple facilities with commas</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Screen Information -->
+                                <div class="col-md-6">
+                                    <h4 class="mb-3">Screen Information</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="screenName" class="form-label">Screen Name*</label>
+                                        <input type="text" class="form-control" id="screenName" name="screenName" placeholder="e.g. Screen 1" value="<%= locals.formData ? formData.screenName : '' %>" required>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="screenSeats" class="form-label">Screen Seats*</label>
+                                        <input type="number" class="form-control" id="screenSeats" name="screenSeats" min="1" placeholder="Total seats in this screen" value="<%= locals.formData ? formData.screenSeats : '' %>" required>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="screenRows" class="form-label">Screen Rows*</label>
+                                            <input type="number" class="form-control" id="screenRows" name="screenRows" min="1" placeholder="Number of rows" value="<%= locals.formData ? formData.screenRows : '' %>" required>
+                                        </div>
+
+                                        <div class="col-md-6 mb-3">
+                                            <label for="screenColumns" class="form-label">Screen Columns*</label>
+                                            <input type="number" class="form-control" id="screenColumns" name="screenColumns" min="1" placeholder="Number of columns" value="<%= locals.formData ? formData.screenColumns : '' %>" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label for="screenType" class="form-label">Screen Type</label>
+                                        <select class="form-select" id="screenType" name="screenType">
+                                            <option value="2D" <%= locals.formData && formData.screenType === '2D' ? 'selected' : '' %>>2D</option>
+                                            <option value="3D" <%= locals.formData && formData.screenType === '3D' ? 'selected' : '' %>>3D</option>
+                                            <option value="IMAX" <%= locals.formData && formData.screenType === 'IMAX' ? 'selected' : '' %>>IMAX</option>
+                                            <option value="IMAX 3D" <%= locals.formData && formData.screenType === 'IMAX 3D' ? 'selected' : '' %>>IMAX 3D</option>
+                                            <option value="4DX" <%= locals.formData && formData.screenType === '4DX' ? 'selected' : '' %>>4DX</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Hidden field to keep the model compatible -->
+                                    <input type="hidden" name="totalSeats" id="totalSeats" value="0">
+                                </div>
+                                
+                                <!-- Image -->
+                                <div class="col-12 mt-4">
+                                    <h4 class="mb-3">Theater Image</h4>
+                                    
+                                    <div class="mb-3">
+                                        <label for="image" class="form-label">Theater Image*</label>
+                                        <input type="file" class="form-control" id="image" name="image" accept="image/*" required>
+                                        <div class="form-text">Recommended size: 800x600 pixels</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Theater
+                                    </button>
+                                    <a href="/admin/theaters" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <%- include('../partials/admin/footer.ejs') %>
+    
+    <script>
+        // Auto-calculate totalSeats from screenSeats when the form is submitted
+        document.querySelector('form').addEventListener('submit', function() {
+            const screenSeats = document.getElementById('screenSeats').value;
+            document.getElementById('totalSeats').value = screenSeats;
+        });
+    </script>
+</body>
+</html> 

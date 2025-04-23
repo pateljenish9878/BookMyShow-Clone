@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" href="/images/favicon.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>Confirm Booking - <%= movie.title %></title>
+    <style>
+        .booking-confirmation {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .booking-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .booking-steps::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: -1;
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .step.active .step-number {
+            background: #f84464;
+            color: white;
+        }
+        .step.completed .step-number {
+            background: #43a047;
+            color: white;
+        }
+        .booking-summary {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .movie-details {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 20px;
+        }
+        .movie-poster {
+            width: 120px;
+            height: 180px;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-right: 20px;
+        }
+        .movie-poster img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .movie-info h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .movie-meta {
+            display: flex;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .movie-meta > div {
+            margin-right: 15px;
+        }
+        .theater-info {
+            margin-bottom: 15px;
+        }
+        .seats-info {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .seats-info > div {
+            margin-right: 30px;
+        }
+        .label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .value {
+            font-weight: bold;
+        }
+        .price-details {
+            border-top: 1px solid #e0e0e0;
+            padding-top: 15px;
+        }
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .price-total {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 18px;
+            padding-top: 10px;
+            border-top: 1px dashed #e0e0e0;
+            margin-top: 10px;
+        }
+        .payment-options {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .payment-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .payment-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .payment-tab.active {
+            border-bottom-color: #f84464;
+            font-weight: bold;
+        }
+        .payment-form {
+            padding: 10px 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .card-details {
+            display: flex;
+            gap: 10px;
+        }
+        .card-details > div:first-child {
+            flex: 2;
+        }
+        .card-details > div {
+            flex: 1;
+        }
+        .pay-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #f84464;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .pay-button:hover {
+            background: #e03c5c;
+        }
+        .terms {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="top-header">
+                <div>
+                    <a href="/"><img src="/images/bookmyshow-logo-vector.png" class="bookmyshow" alt="BookMyShow"></a>
+                </div>
+                <div>
+                    <% if (locals.user) { %>
+                        <div class="user-dropdown">
+                            <div class="user-dropdown-toggle">
+                                <div class="user-avatar">
+                                    <% if (user.profilePic && user.profilePic !== 'default-profile.png') { %>
+                                        <img src="/uploads/users/<%= user.profilePic %>" alt="<%= user.name %>">
+                                    <% } else { %>
+                                        <div class="user-avatar-placeholder">
+                                            <%= user.name.charAt(0).toUpperCase() %>
+                                        </div>
+                                    <% } %>
+                                </div>
+                                <span class="user-name">Hi, <%= user.name.split(' ')[0] %></span>
+                                <i class="fas fa-chevron-down" style="font-size: 12px; color: #777;"></i>
+                            </div>
+                            <div class="user-dropdown-content">
+                                <a href="/user/profile" class="dropdown-item">
+                                    <i class="fas fa-user"></i>
+                                    View Profile
+                                </a>
+                                <a href="/user/change-password" class="dropdown-item">
+                                    <i class="fas fa-key"></i>
+                                    Change Password
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <a href="/logout" class="dropdown-item">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                    Logout
+                                </a>
+                            </div>
+                        </div>
+                    <% } else { %>
+                        <button class="sign-in"><a href="/user/login">Sign In</a></button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: #f5f5f5;">
+            <div class="bottom-header">
+                <div>
+                    <ul>
+                        <li style="padding-left: 0;"><a href="/all-movies">Movies</a></li>
+                        <li><a href="/bookings/all">Your Bookings</a></li>
+                        <li><a href="/coming-soon">Events</a></li>
+                        <li><a href="/coming-soon">Plays</a></li>
+                        <li><a href="/coming-soon">Sports</a></li>
+                        <li><a href="/coming-soon">Activities</a></li>
+                    </ul>
+                </div>
+                
+            </div>
+        </div>
+    </header>
+
+    <main class="booking-confirmation">
+        <!-- Booking Steps -->
+        <div class="booking-steps">
+            <div class="step completed">
+                <div class="step-number">1</div>
+                <div class="step-name">Select Movie</div>
+            </div>
+            <div class="step completed">
+                <div class="step-number">2</div>
+                <div class="step-name">Select Theater</div>
+            </div>
+            <div class="step completed">
+                <div class="step-number">3</div>
+                <div class="step-name">Select Seats</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">4</div>
+                <div class="step-name">Payment</div>
+            </div>
+        </div>
+
+        <!-- Booking Summary -->
+        <div class="booking-summary">
+            <h2>Booking Summary</h2>
+            <div class="movie-details">
+                <div class="movie-poster">
+                    <% if (movie.image) { %>
+                        <img src="/uploads/movies/<%= movie.image %>" alt="<%= movie.title %>" onerror="this.src='/images/default-movie.jpg'">
+                    <% } else if (movie.imageUrl) { %>
+                        <img src="/uploads/movies/<%= movie.imageUrl %>" alt="<%= movie.title %>" onerror="this.src='/images/default-movie.jpg'">
+                    <% } else if (movie.posterUrl) { %>
+                        <img src="/uploads/movies/<%= movie.posterUrl %>" alt="<%= movie.title %>" onerror="this.src='/images/default-movie.jpg'">
+                    <% } else { %>
+                        <img src="/images/default-movie.jpg" alt="<%= movie.title %>">
+                    <% } %>
+                </div>
+                <div class="movie-info">
+                    <h2><%= movie.title %></h2>
+                    <div class="movie-meta">
+                        <div><%= movie.language || 'Not specified' %></div>
+                        <div><%= movie.certificationType || '' %></div>
+                        <div><%= movie.duration ? (movie.duration) : 'Duration not specified' %></div>
+                    </div>
+                    <div class="theater-info">
+                        <div class="label">Theater</div>
+                        <div class="value"><%= theater.name %>, <%= theater.location %></div>
+                    </div>
+                    <div class="seats-info">
+                        <div>
+                            <div class="label">Date</div>
+                            <div class="value">
+                                <% 
+                                try {
+                                    // Check if date is in YYYY-MM-DD format
+                                    if (date && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                        // Split the date and create a new Date object with local timezone
+                                        const [year, month, day] = date.split('-');
+                                        const showDate = new Date(year, month - 1, day);
+                                        
+                                        // Format the date to display weekday, month, day, and year
+                                        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                                        const formattedDate = showDate.toLocaleDateString('en-US', options);
+                                        %><%= formattedDate %><%
+                                    } else {
+                                        // Fallback to original date
+                                        %><%= date %><%
+                                    }
+                                } catch (error) {
+                                    // If any error occurs, display the original date
+                                    %><%= date %><%
+                                }
+                                %>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="label">Time</div>
+                            <div class="value"><%= time %></div>
+                        </div>
+                        <div>
+                            <div class="label">Seats</div>
+                            <div class="value"><%= selectedSeats %></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="price-details">
+                <h3>Price Details</h3>
+                <% 
+                    // Calculate ticket prices based on seat types
+                    const seatArray = selectedSeats.split(',');
+                    const premiumRows = ['G', 'H', 'I', 'J'];
+                    const premiumSeats = seatArray.filter(seat => premiumRows.includes(seat.charAt(0)));
+                    const standardSeats = seatArray.filter(seat => !premiumRows.includes(seat.charAt(0)));
+                    
+                    // Use the server-provided prices instead of hard-coded values
+                    const stdPrice = parseInt(standardPrice);
+                    const premPrice = parseInt(premiumPrice);
+                    
+                    const standardTotal = standardSeats.length * stdPrice;
+                    const premiumTotal = premiumSeats.length * premPrice;
+                    const subtotal = standardTotal + premiumTotal;
+                    const convenienceFee = Math.round(subtotal * 0.05);
+                    const total = subtotal + convenienceFee;
+                %>
+                <div class="price-row">
+                    <span>Standard Seats (<%= standardSeats.length %> × ₹<%= stdPrice %>)</span>
+                    <span>₹<%= standardTotal %></span>
+                </div>
+                <div class="price-row">
+                    <span>Premium Seats (<%= premiumSeats.length %> × ₹<%= premPrice %>)</span>
+                    <span>₹<%= premiumTotal %></span>
+                </div>
+                <div class="price-row">
+                    <span>Convenience Fee</span>
+                    <span>₹<%= convenienceFee %></span>
+                </div>
+                <div class="price-total">
+                    <span>Total Amount</span>
+                    <span>₹<%= total %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Options -->
+        <div class="payment-options">
+            <h2>Payment Options</h2>
+            <div class="payment-tabs">
+                <div class="payment-tab active" onclick="switchTab('card')">Credit/Debit Card</div>
+                <div class="payment-tab" onclick="switchTab('upi')">UPI</div>
+                <div class="payment-tab" onclick="switchTab('wallet')">Wallet</div>
+                <div class="payment-tab" onclick="switchTab('netbanking')">Net Banking</div>
+            </div>
+            
+            <div id="card-payment" class="payment-form">
+                <form id="card-payment-form" action="/bookings/process-payment" method="POST">
+                    <input type="hidden" name="movieId" value="<%= movie._id %>">
+                    <input type="hidden" name="theaterId" value="<%= theater._id %>">
+                    <input type="hidden" name="showDate" value="<%= date %>">
+                    <input type="hidden" name="showTime" value="<%= time %>">
+                    <input type="hidden" name="selectedSeats" value="<%= selectedSeats %>">
+                    <input type="hidden" name="standardPrice" value="<%= standardPrice %>">
+                    <input type="hidden" name="premiumPrice" value="<%= premiumPrice %>">
+                    <input type="hidden" name="totalAmount" value="<%= total %>">
+                    <input type="hidden" name="paymentMethod" value="card">
+                    <input type="hidden" name="screenId" value="<%= typeof screenId !== 'undefined' ? screenId : '' %>">
+                    <input type="hidden" name="screenName" value="<%= typeof screenName !== 'undefined' ? screenName : 'Screen 1' %>">
+                    
+                    <div class="form-group">
+                        <label for="card-name">Cardholder Name</label>
+                        <input type="text" id="card-name" name="cardName" placeholder="Name on card" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="card-number">Card Number</label>
+                        <input type="text" id="card-number" name="cardNumber" placeholder="XXXX XXXX XXXX XXXX" required>
+                    </div>
+                    <div class="card-details">
+                        <div class="form-group">
+                            <label for="expiry">Expiry Date</label>
+                            <input type="text" id="expiry" name="expiry" placeholder="MM/YY" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cvv">CVV</label>
+                            <input type="password" id="cvv" name="cvv" placeholder="XXX" maxlength="3" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerPhone">Phone Number</label>
+                        <input type="tel" id="customerPhone" name="customerPhone" placeholder="Enter your phone number" required>
+                    </div>
+                    
+                    <button type="submit" class="pay-button">Pay ₹<%= total %></button>
+                </form>
+            </div>
+            
+            <div id="upi-payment" class="payment-form" style="display: none;">
+                <form id="upi-payment-form" action="/bookings/process-payment" method="POST">
+                    <input type="hidden" name="movieId" value="<%= movie._id %>">
+                    <input type="hidden" name="theaterId" value="<%= theater._id %>">
+                    <input type="hidden" name="showDate" value="<%= date %>">
+                    <input type="hidden" name="showTime" value="<%= time %>">
+                    <input type="hidden" name="selectedSeats" value="<%= selectedSeats %>">
+                    <input type="hidden" name="standardPrice" value="<%= standardPrice %>">
+                    <input type="hidden" name="premiumPrice" value="<%= premiumPrice %>">
+                    <input type="hidden" name="totalAmount" value="<%= total %>">
+                    <input type="hidden" name="paymentMethod" value="upi">
+                    <input type="hidden" name="screenId" value="<%= typeof screenId !== 'undefined' ? screenId : '' %>">
+                    <input type="hidden" name="screenName" value="<%= typeof screenName !== 'undefined' ? screenName : 'Screen 1' %>">
+                    
+                    <div class="form-group">
+                        <label for="upi-id">UPI ID</label>
+                        <input type="text" id="upi-id" name="upiId" placeholder="username@upi" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerPhone-upi">Phone Number</label>
+                        <input type="tel" id="customerPhone-upi" name="customerPhone" placeholder="Enter your phone number" required>
+                    </div>
+                    
+                    <button type="submit" class="pay-button">Pay ₹<%= total %></button>
+                </form>
+            </div>
+            
+            <div id="wallet-payment" class="payment-form" style="display: none;">
+                <div style="text-align: center; padding: 30px;">
+                    <p>Select your preferred wallet to complete the payment.</p>
+                    <div style="display: flex; justify-content: center; gap: 20px; margin-top: 20px;">
+                        <div style="text-align: center;">
+                            <img src="/images/paytm.png" alt="Paytm" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>Paytm</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <img src="/images/phonepe.png" alt="PhonePe" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>PhonePe</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <img src="/images/amazonpay.png" alt="Amazon Pay" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>Amazon Pay</p>
+                        </div>
+                        <div style="text-align: center;">
+                            <img src="/images/mobikwik.png" alt="MobiKwik" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>MobiKwik</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="netbanking-payment" class="payment-form" style="display: none;">
+                <div style="text-align: center; padding: 30px;">
+                    <p>Choose your bank to proceed with Net Banking payment.</p>
+                    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin-top: 20px;">
+                        <div style="text-align: center; width: 100px;">
+                            <img src="/images/sbi.png" alt="SBI" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>SBI</p>
+                        </div>
+                        <div style="text-align: center; width: 100px;">
+                            <img src="/images/hdfc.png" alt="HDFC" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>HDFC</p>
+                        </div>
+                        <div style="text-align: center; width: 100px;">
+                            <img src="/images/icici.png" alt="ICICI" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>ICICI</p>
+                        </div>
+                        <div style="text-align: center; width: 100px;">
+                            <img src="/images/axis.png" alt="Axis" style="width: 60px; height: 60px; object-fit: contain;">
+                            <p>Axis</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="terms">
+                By proceeding, you agree to our <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="line"></div>
+                <div><img src="/images/footer-logo.svg" alt="BookMyShow Logo"></div>
+                <div class="line"></div>
+            </div>
+            <div class="social-icons-strip">
+                <a href="https://www.facebook.com" target="_blank"><img src="/images/facebook.png" alt="Facebook"></a>
+                <a href="https://www.x.com" target="_blank"><img src="/images/twitter.png" alt="Twitter"></a>
+                <a href="https://www.instagram.com" target="_blank"><img src="/images/instagram.png" alt="Instagram"></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="/images/youtube.png" alt="YouTube"></a>
+                <a href="https://www.pinterest.com" target="_blank"><img src="/images/pintrest.png" alt="Pinterest"></a>
+                <a href="https://www.linkedin.com" target="_blank"><img style="margin-right: 0;" src="/images/linkedin.png" alt="LinkedIn"></a>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-text">
+                    <p>Copyright 2025 © Bigtree Entertainment Pvt. Ltd. All Rights Reserved.</p>
+                    <p>The content and images used on this site are copyright protected and copyrights vests with the respective owners. The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. Unauthorized use is prohibited and punishable by law.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            // Hide all payment forms
+            document.getElementById('card-payment').style.display = 'none';
+            document.getElementById('upi-payment').style.display = 'none';
+            document.getElementById('wallet-payment').style.display = 'none';
+            document.getElementById('netbanking-payment').style.display = 'none';
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.payment-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected payment form and mark tab as active
+            document.getElementById(`${tabId}-payment`).style.display = 'block';
+            event.currentTarget.classList.add('active');
+        }
+
+        // Handle form submissions with AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Card payment form
+            const cardForm = document.getElementById('card-payment-form');
+            cardForm.addEventListener('submit', handlePaymentSubmit);
+            
+            // UPI payment form
+            const upiForm = document.getElementById('upi-payment-form');
+            upiForm.addEventListener('submit', handlePaymentSubmit);
+            
+            function handlePaymentSubmit(event) {
+                event.preventDefault();
+                const form = event.target;
+                
+                // Show processing indicator
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.textContent = 'Processing...';
+                submitButton.disabled = true;
+                
+                // Create form data and convert to JSON
+                const formData = new FormData(form);
+                const formDataJson = {};
+                formData.forEach((value, key) => {
+                    formDataJson[key] = value;
+                });
+                
+                // Make AJAX request
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formDataJson)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Redirect to success page
+                        window.location.href = data.redirectUrl;
+                    } else {
+                        // Show error message
+                        alert('Payment failed: ' + data.message);
+                        submitButton.textContent = originalText;
+                        submitButton.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error processing payment:', error);
+                    alert('An error occurred while processing your payment. Please try again.');
+                    submitButton.textContent = originalText;
+                    submitButton.disabled = false;
+                });
+            }
+        });
+    </script>
+</body>
+</html>

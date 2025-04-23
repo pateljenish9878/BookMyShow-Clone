@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    
+    <!-- Flash Message Container (Hidden but accessible) -->
+    <div id="flash-message-container" aria-hidden="true" class="position-absolute" style="opacity: 0; pointer-events: none;">
+        <% if(typeof success !== 'undefined' && success) { %>
+            <div class="flash-message" data-type="success"><%= success %></div>
+        <% } %>
+        
+        <% if(typeof error !== 'undefined' && error) { %>
+            <div class="flash-message" data-type="error"><%= error %></div>
+        <% } %>
+        
+        <% if(typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+            <div class="flash-message" data-type="success"><%= success_msg %></div>
+        <% } %>
+        
+        <% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+            <div class="flash-message" data-type="error"><%= error_msg %></div>
+        <% } %>
+        
+        <% if(typeof warning_msg !== 'undefined' && warning_msg.length > 0) { %>
+            <div class="flash-message" data-type="warning"><%= warning_msg %></div>
+        <% } %>
+        
+        <% if(typeof info_msg !== 'undefined' && info_msg.length > 0) { %>
+            <div class="flash-message" data-type="info"><%= info_msg %></div>
+        <% } %>
+    </div>
+    
+    <%- include('../partials/admin/sidebar.ejs', { path: '/admin/users', query: query }) %>
+    
+    <main class="main">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="page-title mb-0"><%= activeTab === 'admin' ? 'Administrator Management' : 'User Management' %></h1>
+                <div class="d-flex">
+                    <% if (activeTab === 'admin') { %>
+                        <a href="/admin/users/add-admin" class="btn btn-primary btn-icon">
+                            <i class="fas fa-plus me-2"></i> Add New Administrator
+                        </a>
+                    <% } else { %>
+                        <a href="/admin/users/add-user" class="btn btn-primary btn-icon">
+                            <i class="fas fa-plus me-2"></i> Add New User
+                        </a>
+                    <% } %>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0"><%= activeTab === 'admin' ? 'All Administrators' : 'All Users' %></h5>
+                    <div>
+                        <span class="badge bg-primary"><%= users.length %> <%= activeTab === 'admin' ? 'administrators' : 'users' %></span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Phone</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Created At</th>
+                                    <th scope="col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% 
+                                if (users && users.length > 0) { 
+                                    users.forEach((user, index) => { 
+                                %>
+                                <tr>
+                                    <td><%= index + 1 %></td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <% if (user.profilePic) { %>
+                                                <img src="/uploads/users/<%= user.profilePic %>" alt="<%= user.name %>" class="rounded-circle me-2" width="32" height="32"
+                                                     onerror="this.onerror=null; this.src='/uploads/profiles/<%= user.profilePic %>'; 
+                                                              this.onerror=function(){this.onerror=null; this.src='/public/uploads/users/<%= user.profilePic %>'; 
+                                                              this.onerror=function(){this.onerror=null; this.src='https://ui-avatars.com/api/?name=<%= encodeURIComponent(user.name) %>&background=0D6EFD&color=fff&size=32';}}">
+                                            <% } else { %>
+                                                <div class="avatar-placeholder bg-primary rounded-circle text-white me-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                                    <%= user.name.charAt(0).toUpperCase() %>
+                                                </div>
+                                            <% } %>
+                                            <%= user.name %>
+                                        </div>
+                                    </td>
+                                    <td><%= user.email %></td>
+                                    <td><%= user.phone || 'N/A' %></td>
+                                    <td>
+                                        <% if (user.active) { %>
+                                            <span class="badge bg-success">Active</span>
+                                        <% } else { %>
+                                            <span class="badge bg-danger">Inactive</span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= new Date(user.createdAt).toLocaleDateString() %></td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <% if (activeTab === 'admin') { %>
+                                                <a href="/admin/users/<%= user._id %>" class="btn btn-sm btn-info" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="/admin/users/<%= user._id %>/edit" class="btn btn-sm btn-primary" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <% if (typeof currentUser !== 'undefined' && currentUser && currentUser._id && user._id && user._id.toString() !== currentUser._id.toString()) { %>
+                                                    <button type="button" class="btn btn-sm btn-danger delete-user" data-user-id="<%= user._id %>" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                    <% if (user.active) { %>
+                                                        <button type="button" class="btn btn-sm btn-warning toggle-status" data-user-id="<%= user._id %>" data-current-status="active" title="Deactivate">
+                                                            <i class="fas fa-ban"></i>
+                                                        </button>
+                                                    <% } else { %>
+                                                        <button type="button" class="btn btn-sm btn-success toggle-status" data-user-id="<%= user._id %>" data-current-status="inactive" title="Activate">
+                                                            <i class="fas fa-check"></i>
+                                                        </button>
+                                                    <% } %>
+                                                <% } %>
+                                            <% } else { %>
+                                                
+                                                <% if (user.active) { %>
+                                                    <button type="button" class="btn btn-sm btn-warning toggle-status" data-user-id="<%= user._id %>" data-current-status="active" title="Deactivate">
+                                                        <i class="fas fa-ban"></i>
+                                                    </button>
+                                                <% } else { %>
+                                                    <button type="button" class="btn btn-sm btn-success toggle-status" data-user-id="<%= user._id %>" data-current-status="inactive" title="Activate">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                <% } %>
+                                            <% } %>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                                <% } else { %>
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                            <p class="mb-0">No <%= activeTab === 'admin' ? 'administrators' : 'users' %> found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-exclamation-triangle text-danger fa-3x mb-3"></i>
+                        <p>Are you sure you want to delete this <%= activeTab === 'admin' ? 'administrator' : 'user' %>? This action cannot be undone.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="deleteForm" method="POST" action="">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toggle Status Confirmation Modal -->
+    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="statusModalLabel">Confirm Status Change</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="statusModalBody">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-user-shield text-warning fa-3x mb-3"></i>
+                        <p>Are you sure you want to change this <%= activeTab === 'admin' ? 'administrator' : 'user' %>'s status?</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form id="statusForm" method="POST" action="">
+                        <button type="submit" class="btn btn-primary" id="statusConfirmBtn">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <%- include('../partials/admin/footer.ejs') %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButtons = document.querySelectorAll('.delete-user');
+            const deleteForm = document.getElementById('deleteForm');
+            
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    deleteForm.action = `/admin/users/${userId}`;
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                    deleteModal.show();
+                });
+            });
+            
+            const toggleStatusButtons = document.querySelectorAll('.toggle-status');
+            const statusForm = document.getElementById('statusForm');
+            const statusModalBody = document.getElementById('statusModalBody');
+            const statusConfirmBtn = document.getElementById('statusConfirmBtn');
+            
+            toggleStatusButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const currentStatus = this.getAttribute('data-current-status');
+                    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+                    
+                    statusForm.action = `/admin/users/${userId}/toggle-status`;
+                    
+                    // Update modal message
+                    const message = `Are you sure you want to ${currentStatus === 'active' ? 'deactivate' : 'activate'} this <%= activeTab === 'admin' ? 'administrator' : 'user' %>?`;
+                    document.querySelector('#statusModalBody p').textContent = message;
+                    
+                    // Update button style
+                    if (newStatus === 'active') {
+                        statusConfirmBtn.className = 'btn btn-success';
+                        statusConfirmBtn.textContent = 'Activate';
+                        document.querySelector('#statusModalBody i').className = 'fas fa-check-circle text-success fa-3x mb-3';
+                    } else {
+                        statusConfirmBtn.className = 'btn btn-warning';
+                        statusConfirmBtn.textContent = 'Deactivate';
+                        document.querySelector('#statusModalBody i').className = 'fas fa-ban text-warning fa-3x mb-3';
+                    }
+                    
+                    const statusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+                    statusModal.show();
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

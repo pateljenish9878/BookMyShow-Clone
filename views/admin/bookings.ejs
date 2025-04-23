@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    
+    <!-- Flash Message Container (Hidden but accessible) -->
+    <div id="flash-message-container" aria-hidden="true" class="position-absolute" style="opacity: 0; pointer-events: none;">
+        <% if(typeof success !== 'undefined' && success) { %>
+            <div class="flash-message" data-type="success"><%= success %></div>
+        <% } %>
+        
+        <% if(typeof error !== 'undefined' && error) { %>
+            <div class="flash-message" data-type="error"><%= error %></div>
+        <% } %>
+        
+        <% if(typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+            <div class="flash-message" data-type="success"><%= success_msg %></div>
+        <% } %>
+        
+        <% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+            <div class="flash-message" data-type="error"><%= error_msg %></div>
+        <% } %>
+        
+        <% if(typeof warning_msg !== 'undefined' && warning_msg.length > 0) { %>
+            <div class="flash-message" data-type="warning"><%= warning_msg %></div>
+        <% } %>
+        
+        <% if(typeof info_msg !== 'undefined' && info_msg.length > 0) { %>
+            <div class="flash-message" data-type="info"><%= info_msg %></div>
+        <% } %>
+    </div>
+    
+    <%- include('../partials/admin/sidebar.ejs', { path: '/admin/bookings' }) %>
+    
+    <main class="main">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="page-title mb-0">Booking Management</h1>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">All Bookings</h5>
+                    <div>
+                        <span class="badge bg-primary"><%= bookings.length %> Bookings</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th scope="col">#</th>
+                                    <th scope="col">User</th>
+                                    <th scope="col">Movie</th>
+                                    <th scope="col">Poster</th>
+                                    <th scope="col">Theater</th>
+                                    <th scope="col">Show Date</th>
+                                    <th scope="col">Show Time</th>
+                                    <th scope="col">Seats</th>
+                                    <th scope="col">Amount</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Booking Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% 
+                                if (bookings && bookings.length > 0) { 
+                                    bookings.forEach((booking, index) => { 
+                                %>
+                                <tr>
+                                    <td><%= index + 1 %></td>
+                                    
+                                    <td><%= booking.user.name %></td>
+                                    <td>
+                                        <% if (booking.movie && booking.movie.title) { %>
+                                            <%= booking.movie.title %>
+                                        <% } else { %>
+                                            Unknown Movie
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (booking.movie && booking.movie.image) { %>
+                                            <img src="/uploads/movies/<%= booking.movie.image %>" alt="<%= booking.movie.title %>" class="img-thumbnail" style="width: 40px; height: 60px; object-fit: cover;">
+                                        <% } else { %>
+                                            <span class="badge bg-secondary">No Image</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (booking.theater && booking.theater.name) { %>
+                                            <%= booking.theater.name %>
+                                        <% } else { %>
+                                            Unknown Theater
+                                        <% } %>
+                                    </td>
+                                    <td><%= new Date(booking.showDate).toLocaleDateString() %></td>
+                                    <td><%= booking.showTime %></td>
+                                    <td>
+                                        <% if (booking.seats && booking.seats.length > 0) { %>
+                                            <span class="badge bg-info"><%= booking.seats.length %> seats</span>
+                                            <span class="text-muted small"><%= booking.seats.join(', ') %></span>
+                                        <% } else { %>
+                                            N/A
+                                        <% } %>
+                                    </td>
+                                    <td><strong>₹<%= booking.totalAmount || 0 %></strong></td>
+                                    <td>
+                                        <% 
+                                        let statusClass = 'bg-success';
+                                        if (booking.status === 'cancelled') {
+                                            statusClass = 'bg-danger';
+                                        } else if (booking.status === 'pending') {
+                                            statusClass = 'bg-warning';
+                                        }
+                                        %>
+                                        <span class="badge <%= statusClass %>">
+                                            <%= booking.status.charAt(0).toUpperCase() + booking.status.slice(1) || 'Pending' %>
+                                        </span>
+                                    </td>
+                                    <td><%= new Date(booking.createdAt).toLocaleDateString() %></td>
+                                </tr>
+                                <% }); %>
+                                <% } else { %>
+                                <tr>
+                                    <td colspan="12" class="text-center py-4">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                                            <p class="mb-0">No bookings found</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% } %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <%- include('../partials/admin/footer.ejs') %>
+</body>
+</html> 

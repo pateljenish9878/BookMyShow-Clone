@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+    <link rel="icon" href="/images/favicon.png">
+    <title>Movie Tickets, Plays, Sports, Events & Cinemas near Surat - BookMyShow Surat.</title>
+</head>
+<body>
+    <div>
+        <%- include('../header'); %>
+    </div>
+    <div class="slider">
+        <div class="swiper mySwiper">
+            <div class="swiper-wrapper">
+              <% sliderBanners.forEach(function(banner) { %>
+                <div class="swiper-slide"><img src="<%= banner %>" alt="Slider Banner"></div>
+                <% }); %>
+                <div class="swiper-slide"><img src="/images/swiper-1.jpg" alt="Slider Banner"></div>
+            </div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+            <div class="swiper-pagination"></div>
+          </div>
+    </div>
+
+    <section class="recommend-movie">
+        <div class="container">
+            <div class="recommend-heading">
+                <h2>Recommend Movies</h2>
+            </div>
+            <div class="recommend-card-wrapper">
+                <% if (movies.length === 0) { %>
+                <p>No movies found.</p>
+                <% } else { %>
+                <% movies.forEach(movie => { %>
+                <div class="recommend-card" onclick="window.location.href='/movie/<%= movie._id %>'">
+                    <img src="<%= movie.image.startsWith('movie-') ? `/uploads/movies/${movie.image}` : `/uploads/${movie.image}` %>" alt="<%= movie.title %>" class="recommend-movie-img">
+                    <h3 class="recommend-movie-title"><%= movie.title %></h3>
+                    <p class="recommend-movie-category"><%= movie.category %></p>
+                </div>
+                <% }) %>
+                <% } %>
+            </div>
+        </div>
+    </section>
+
+    <section class="banner">
+        <div class="container">
+            <div class="banner-wrapper">
+                <img src="/images/banner.avif" alt="">
+            </div>
+        </div>
+    </section>
+
+    <section class="events">
+        <div class="container">
+            <div class="events-heading">
+                <h2>The Best Of Live Events</h2>
+            </div>
+            <div class="events-img-wrapper">
+                    <a href="/coming-soon"><img src="/images/event-1.jpeg" alt=""></a>
+                    <a href="/coming-soon"><img src="/images/event-2.jpeg" alt=""></a>
+                    <a href="/coming-soon"><img src="/images/event-3.jpeg" alt=""></a>
+                    <a href="/coming-soon"><img src="/images/event-4.jpeg" alt=""></a>
+                    <a href="/coming-soon"><img src="/images/event-5.jpeg" alt=""></a>
+            </div>
+        </div>
+    </section>
+
+    <div>
+        <%- include('../footer'); %>
+    </div>
+
+
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+   var swiper = new Swiper(".mySwiper", {
+      slidesPerView: "auto",
+      centeredSlides: true,
+      spaceBetween: 10,
+      loop: true,
+      autoplay: {
+      delay: 2000,
+      disableOnInteraction: false,
+    },
+    pagination: {
+      el: ".swiper-pagination",
+      clickable: true,
+    },
+    navigation: {
+      nextEl: ".swiper-button-next",
+      prevEl: ".swiper-button-prev",
+    },
+    });
+  </script>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile - BookMyShow</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Roboto', sans-serif;
+        }
+        .profile-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .profile-header {
+            background: #f84464;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .profile-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .profile-content {
+            padding: 30px;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-control {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .profile-image-section {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .profile-image {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 20px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-image-placeholder {
+            font-size: 40px;
+            color: #ccc;
+        }
+        .image-upload-btn {
+            background-color: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .image-upload-btn:hover {
+            background-color: #e0e0e0;
+        }
+        .btn {
+            padding: 12px 20px;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s;
+        }
+        .btn-primary {
+            background-color: #f84464;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #e03c5c;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <%- include('header'); %>
+    
+    <div class="profile-container">
+        <div class="profile-header">
+            <h1>Your Profile</h1>
+        </div>
+        
+        <div class="profile-content">
+            <% if (success) { %>
+                <div class="alert alert-success">
+                    Profile updated successfully!
+                </div>
+            <% } %>
+            
+            <% if (errors && errors.length > 0) { %>
+                <div class="alert alert-danger">
+                    <% errors.forEach(error => { %>
+                        <div><%= error.msg %></div>
+                    <% }); %>
+                </div>
+            <% } %>
+            
+            <form action="/user/profile" method="POST" enctype="multipart/form-data">
+                <div class="profile-image-section">
+                    <div class="profile-image">
+                        <% if (user.profilePic && user.profilePic !== 'default-profile.png') { %>
+                            <img id="profile-preview" src="/uploads/users/<%= user.profilePic %>" alt="<%= user.name %>">
+                        <% } else { %>
+                            <div id="profile-placeholder" class="profile-image-placeholder">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <img id="profile-preview" style="display: none;" src="#" alt="Profile Preview">
+                        <% } %>
+                    </div>
+                    <div>
+                        <input type="file" id="profilePic" name="profilePic" accept="image/*" style="display: none;">
+                        <button type="button" class="image-upload-btn" onclick="document.getElementById('profilePic').click()">
+                            <i class="fas fa-camera"></i> Change Profile Picture
+                        </button>
+                        <p style="margin-top: 8px; font-size: 14px; color: #666;">
+                            Recommended: Square image, max 2MB
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="<%= user.name %>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" class="form-control" id="email" name="email" value="<%= user.email %>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" value="<%= user.phone || '' %>">
+                </div>
+                
+                <div class="buttons">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="/" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Preview uploaded profile image
+        document.getElementById('profilePic').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImg = document.getElementById('profile-preview');
+                    const placeholder = document.getElementById('profile-placeholder');
+                    
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    
+    <!-- Flash Message Container (Hidden but accessible) -->
+    <div id="flash-message-container" aria-hidden="true" class="position-absolute" style="opacity: 0; pointer-events: none;">
+        <% if(typeof success !== 'undefined' && success) { %>
+            <div class="flash-message" data-type="success"><%= success %></div>
+        <% } %>
+        
+        <% if(typeof error !== 'undefined' && error) { %>
+            <div class="flash-message" data-type="error"><%= error %></div>
+        <% } %>
+        
+        <% if(typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+            <div class="flash-message" data-type="success"><%= success_msg %></div>
+        <% } %>
+        
+        <% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+            <div class="flash-message" data-type="error"><%= error_msg %></div>
+        <% } %>
+        
+        <% if(typeof warning_msg !== 'undefined' && warning_msg.length > 0) { %>
+            <div class="flash-message" data-type="warning"><%= warning_msg %></div>
+        <% } %>
+        
+        <% if(typeof info_msg !== 'undefined' && info_msg.length > 0) { %>
+            <div class="flash-message" data-type="info"><%= info_msg %></div>
+        <% } %>
+    </div>
+    
+    <%- include('../partials/admin/sidebar.ejs', { path: '/admin/profile' }) %>
+    
+    <main class="main">
+        <div class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="page-title mb-0">Edit Profile</h1>
+                <div class="d-flex">
+                    <a href="/admin/profile" class="btn btn-secondary btn-icon">
+                        <i class="fas fa-arrow-left me-2"></i> Back to Profile
+                    </a>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Edit Your Information</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/profile/update" method="POST" class="needs-validation" novalidate>
+                        <div class="row mb-3">
+                            <label for="name" class="col-sm-3 col-form-label">Full Name</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="name" name="name" value="<%= adminUser.name %>" required>
+                                <div class="invalid-feedback">
+                                    Please provide your full name.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label for="email" class="col-sm-3 col-form-label">Email Address</label>
+                            <div class="col-sm-9">
+                                <input type="email" class="form-control" id="email" name="email" value="<%= adminUser.email %>" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid email address.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label for="phone" class="col-sm-3 col-form-label">Phone Number</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control" id="phone" name="phone" value="<%= adminUser.phone || '' %>">
+                                <div class="form-text">Optional, but recommended for account recovery.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-sm-9 offset-sm-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="emailNotifications" name="emailNotifications" <%= adminUser.preferences && adminUser.preferences.emailNotifications ? 'checked' : '' %>>
+                                    <label class="form-check-label" for="emailNotifications">
+                                        Receive email notifications
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-9 offset-sm-3">
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                                <a href="/admin/profile" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Change Password</h5>
+                </div>
+                <div class="card-body">
+                    <form action="/admin/profile/change-password" method="POST" class="needs-validation" novalidate>
+                        <div class="row mb-3">
+                            <label for="currentPassword" class="col-sm-3 col-form-label">Current Password</label>
+                            <div class="col-sm-9">
+                                <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                                <div class="invalid-feedback">
+                                    Please enter your current password.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label for="newPassword" class="col-sm-3 col-form-label">New Password</label>
+                            <div class="col-sm-9">
+                                <input type="password" class="form-control" id="newPassword" name="newPassword" 
+                                       required minlength="6" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{6,}$">
+                                <div class="invalid-feedback">
+                                    Password must be at least 6 characters long and include at least one lowercase letter, one uppercase letter, and one number.
+                                </div>
+                                <div class="form-text">Password must be at least 6 characters and contain a mix of uppercase, lowercase, and numbers.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <label for="confirmPassword" class="col-sm-3 col-form-label">Confirm Password</label>
+                            <div class="col-sm-9">
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                                <div class="invalid-feedback">
+                                    Passwords do not match.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-sm-9 offset-sm-3">
+                                <button type="submit" class="btn btn-primary">Change Password</button>
+                                <a href="/admin/profile" class="btn btn-secondary ms-2">Cancel</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <%- include('../partials/admin/footer.ejs') %>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Form validation
+            const forms = document.querySelectorAll('.needs-validation');
+            
+            Array.from(forms).forEach(form => {
+                form.addEventListener('submit', event => {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    
+                    // Check if password fields match
+                    const newPassword = form.querySelector('#newPassword');
+                    const confirmPassword = form.querySelector('#confirmPassword');
+                    
+                    if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
+                        confirmPassword.setCustomValidity('Passwords do not match');
+                        event.preventDefault();
+                        event.stopPropagation();
+                    } else if (confirmPassword) {
+                        confirmPassword.setCustomValidity('');
+                    }
+                    
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        });
+    </script>
+</body>
+</html> 

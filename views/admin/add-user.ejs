@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<%- include('../partials/admin/header.ejs') %>
+<body>
+    <%- include('../partials/admin/navbar.ejs') %>
+    <div class="container-fluid">
+        <div class="row">
+            <%- include('../partials/admin/sidebar.ejs', { path: '/admin/users' }) %>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Add New User</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <a href="/admin/users" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Users
+                        </a>
+                    </div>
+                </div>
+                
+                <% if (locals.errors && errors.length > 0) { %>
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <ul class="mb-0">
+                            <% errors.forEach(error => { %>
+                                <li><%= error.msg %></li>
+                            <% }); %>
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                <% } %>
+                
+                <div class="card">
+                    <div class="card-body">
+                        <form action="/admin/users" method="POST" enctype="multipart/form-data">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="name" class="form-label">Full Name*</label>
+                                    <input type="text" class="form-control" id="name" name="name" value="<%= locals.formData ? formData.name : '' %>" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="email" class="form-label">Email Address*</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="<%= locals.formData ? formData.email : '' %>" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="password" class="form-label">Password*</label>
+                                    <input type="password" class="form-control" id="password" name="password" minlength="6" required>
+                                    <div class="form-text">Password must be at least 6 characters</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="phone" class="form-label">Phone Number*</label>
+                                    <input type="text" class="form-control" id="phone" name="phone" value="<%= locals.formData ? formData.phone : '' %>" required>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="role" class="form-label">Role *</label>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="user" <%= (formData && formData.role === 'user') ? 'selected' : '' %>>User</option>
+                                        <option value="admin" <%= (formData && formData.role === 'admin') ? 'selected' : '' %>>Admin</option>
+                                    </select>
+                                    <div class="form-text">Select whether this is a regular user or admin account.</div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="profilePic" class="form-label">Profile Picture</label>
+                                    <input type="file" class="form-control" id="profilePic" name="profilePic" accept="image/*">
+                                    <div class="form-text">Upload a profile picture (optional)</div>
+                                </div>
+                                
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save User
+                                    </button>
+                                    <a href="/admin/users" class="btn btn-secondary">Cancel</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <%- include('../partials/admin/footer.ejs') %>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize SweetAlert Toast
+            const Toast = Swal.mixin({
+                toast: true,
+                position: "top-end",
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                }
+            });
+            
+            // Handle flash messages
+            <% if(typeof success_msg !== 'undefined' && success_msg.length > 0) { %>
+                Toast.fire({
+                    icon: "success",
+                    title: "<%= success_msg %>"
+                });
+            <% } %>
+            
+            <% if(typeof error_msg !== 'undefined' && error_msg.length > 0) { %>
+                Toast.fire({
+                    icon: "error",
+                    title: "<%= error_msg %>"
+                });
+            <% } %>
+            
+            <% if(typeof warning_msg !== 'undefined' && warning_msg.length > 0) { %>
+                Toast.fire({
+                    icon: "warning",
+                    title: "<%= warning_msg %>"
+                });
+            <% } %>
+            
+            <% if(typeof info_msg !== 'undefined' && info_msg.length > 0) { %>
+                Toast.fire({
+                    icon: "info",
+                    title: "<%= info_msg %>"
+                });
+            <% } %>
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coming Soon - BookMyShow</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .coming-soon-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .coming-soon-icon {
+            font-size: 80px;
+            color: #f84464;
+            margin-bottom: 20px;
+        }
+        
+        .coming-soon-title {
+            font-size: 36px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .coming-soon-message {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .home-button {
+            display: inline-block;
+            background-color: #f84464;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .home-button:hover {
+            background-color: #e03c5c;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+            text-align: left;
+        }
+        
+        .feature-item {
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background-color: white;
+        }
+        
+        .feature-icon {
+            font-size: 30px;
+            color: #f84464;
+            margin-bottom: 15px;
+        }
+        
+        .feature-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .feature-description {
+            color: #666;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <%- include('header'); %>
+    
+    <div class="coming-soon-container">
+        <div class="coming-soon-icon">
+            <i class="fas fa-clock"></i>
+        </div>
+        
+        <h1 class="coming-soon-title">Coming Soon</h1>
+        
+        <p class="coming-soon-message">
+            We're working hard to bring you this exciting new feature. 
+            Stay tuned for updates as we prepare to launch something amazing!
+        </p>
+        
+        <a href="/" class="home-button">Back to Homepage</a>
+        
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-film"></i>
+                </div>
+                <h3 class="feature-title">New Movie Experiences</h3>
+                <p class="feature-description">
+                    Get ready for an enhanced movie experience with premium seating options, 
+                    exclusive previews, and special events.
+                </p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <h3 class="feature-title">Advanced Booking</h3>
+                <p class="feature-description">
+                    Soon you'll be able to book tickets months in advance for highly anticipated releases 
+                    and special screenings.
+                </p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-mobile-alt"></i>
+                </div>
+                <h3 class="feature-title">Mobile Experience</h3>
+                <p class="feature-description">
+                    A completely redesigned mobile experience is on its way, making it even easier 
+                    to book and manage your movie outings.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <%- include('footer'); %>
+</body>
+</html> 

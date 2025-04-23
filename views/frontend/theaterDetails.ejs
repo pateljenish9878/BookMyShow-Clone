@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="icon" href="/images/favicon.png">
+    <title><%= theater.name %> - BookMyShow</title>
+    <style>
+        .theater-details {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .theater-banner {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .theater-banner img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            margin-right: 20px;
+            border-radius: 4px;
+        }
+        .theater-info h1 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .theater-address {
+            color: #666;
+            margin: 0 0 5px 0;
+        }
+        .theater-facilities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .facility {
+            background: #f1f1f1;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .theater-screens {
+            margin-top: 30px;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .theater-screens h2 {
+            margin-top: 0;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .screen-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .screen-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            flex: 1;
+            min-width: 250px;
+        }
+        .screen-name {
+            font-weight: bold;
+            margin: 0 0 5px 0;
+        }
+        .screen-info {
+            color: #666;
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .upcoming-shows {
+            margin-top: 30px;
+        }
+        .upcoming-shows h2 {
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 10px;
+        }
+        .show-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .show-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .show-image {
+            height: 180px;
+            width: 100%;
+            object-fit: cover;
+        }
+        .show-details {
+            padding: 15px;
+        }
+        .show-title {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+        }
+        .show-info {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 14px;
+        }
+        .show-time {
+            font-weight: bold;
+            color: #f84464;
+        }
+        .show-date {
+            color: #333;
+        }
+        .book-now-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: #f84464;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .book-now-btn:hover {
+            background: #e03c5c;
+        }
+        .no-shows {
+            padding: 20px;
+            text-align: center;
+            background: #f9f9f9;
+            border-radius: 8px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="top-header">
+                <div>
+                    <a href="/"><img src="/images/bookmyshow-logo-vector.png" class="bookmyshow" alt="BookMyShow"></a>
+                </div>
+                <div style="display: flex; justify-content: flex-end; flex-grow: 1;">
+                    <% if (locals.user) { %>
+                        <div class="user-menu">
+                            <span class="user-name">Hi, <%= user.name.split(' ')[0] %></span>
+                            <a href="/logout" class="logout-btn">Logout</a>
+                        </div>
+                    <% } else { %>
+                        <button class="sign-in"><a href="/user/login">Sign In</a></button>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div style="background-color: #f5f5f5;">
+            <div class="bottom-header">
+                <div>
+                    <ul>
+                        <li style="padding-left: 0;"><a href="/all-movies">Movies</a></li>
+                        <li><a href="/bookings">Your Bookings</a></li>
+                        <li><a href="/coming-soon">Events</a></li>
+                        <li><a href="/coming-soon">Plays</a></li>
+                        <li><a href="/coming-soon">Sports</a></li>
+                        <li><a href="/coming-soon">Activities</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <ul>
+                        <li style="padding-right: 0;"><a href="/admin-movies">Upload Movie</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="theater-details">
+        <!-- Theater Banner -->
+        <div class="theater-banner">
+            <img src="<%= theater.image ? `/uploads/theaters/${theater.image}` : '/images/default-theater.jpg' %>" alt="<%= theater.name %>">
+            <div class="theater-info">
+                <h1><%= theater.name %></h1>
+                <p class="theater-address"><%= theater.location %>, <%= theater.city %>, <%= theater.state %> <%= theater.pincode || '' %></p>
+                <% if (theater.contactNumber) { %>
+                    <p class="theater-contact">Contact: <%= theater.contactNumber %></p>
+                <% } %>
+                <div class="theater-facilities">
+                    <div class="facility">M-Ticket</div>
+                    <div class="facility">Food & Beverage</div>
+                    <% if (theater.facilities) { %>
+                        <% 
+                        if (Array.isArray(theater.facilities)) {
+                            theater.facilities.forEach(facility => { %>
+                                <div class="facility"><%= facility %></div>
+                        <%  });
+                        } else if (typeof theater.facilities === 'string') {
+                            theater.facilities.split(',').forEach(facility => { %>
+                                <div class="facility"><%= facility.trim() %></div>
+                        <%  });
+                        }
+                        %>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Theater Screens -->
+        <div class="theater-screens">
+            <h2>Available Screens</h2>
+            <div class="screen-list">
+                <% if (theater.screens && theater.screens.length > 0) { %>
+                    <% theater.screens.forEach(screen => { %>
+                        <div class="screen-card">
+                            <h3 class="screen-name"><%= screen.name %></h3>
+                            <p class="screen-info">Type: <%= screen.type || '2D' %></p>
+                            <p class="screen-info">Capacity: <%= screen.totalSeats %> seats</p>
+                        </div>
+                    <% }) %>
+                <% } else { %>
+                    <p>No screen information available</p>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Upcoming Shows -->
+        <div class="upcoming-shows">
+            <h2>Upcoming Shows</h2>
+            <% if (upcomingShows && upcomingShows.length > 0) { %>
+                <div class="show-list">
+                    <% upcomingShows.forEach(show => { %>
+                        <div class="show-card">
+                            <img class="show-image" src="<%= show.movieId && show.movieId.image ? (show.movieId.image.startsWith('http') ? show.movieId.image : `/uploads/movies/${show.movieId.image}`) : '/images/movie-background.jpg' %>" alt="<%= show.movieId ? show.movieId.title : 'Movie' %>">
+                            <div class="show-details">
+                                <h3 class="show-title"><%= show.movieId ? show.movieId.title : 'Movie' %></h3>
+                                <div class="show-info">
+                                    <span class="show-date"><%= new Date(show.showDate).toLocaleDateString() %></span>
+                                    <span class="show-time"><%= show.showTime %></span>
+                                </div>
+                                <% 
+                                // Find the screen for this show if available
+                                let screenInfo = '';
+                                if (theater.screens && show.screenId) {
+                                    const screen = theater.screens.find(s => s._id.toString() === show.screenId.toString());
+                                    if (screen) {
+                                        screenInfo = `${screen.name} - ${screen.type || '2D'}`;
+                                    }
+                                }
+                                %>
+                                <% if (screenInfo) { %>
+                                <div class="show-info" style="margin-top: 5px;">
+                                    <span style="color: #666; font-size: 13px;"><%= screenInfo %></span>
+                                    <% if (show.price) { %>
+                                    <span style="color: #f84464; font-weight: bold;">₹<%= show.price %></span>
+                                    <% } %>
+                                </div>
+                                <% } %>
+                                <a href="/bookings/select-seats/<%= show.movieId._id %>/<%= theater._id %>?time=<%= encodeURIComponent(show.showTime) %>&date=<%= show.showDate.toISOString().split('T')[0] %>" class="book-now-btn">Book Now</a>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="no-shows">
+                    <h3>No upcoming shows scheduled</h3>
+                    <p>Please check back later for show timings.</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-container">
+            <div class="footer-logo">
+                <div class="line"></div>
+                <div><img src="/images/footer-logo.svg" alt="BookMyShow Logo"></div>
+                <div class="line"></div>
+            </div>
+            <div class="social-icons-strip">
+                <a href="https://www.facebook.com" target="_blank"><img src="/images/facebook.png" alt="Facebook"></a>
+                <a href="https://www.x.com" target="_blank"><img src="/images/twitter.png" alt="Twitter"></a>
+                <a href="https://www.instagram.com" target="_blank"><img src="/images/instagram.png" alt="Instagram"></a>
+                <a href="https://www.youtube.com" target="_blank"><img src="/images/youtube.png" alt="YouTube"></a>
+                <a href="https://www.pinterest.com" target="_blank"><img src="/images/pintrest.png" alt="Pinterest"></a>
+                <a href="https://www.linkedin.com" target="_blank"><img style="margin-right: 0;" src="/images/linkedin.png" alt="LinkedIn"></a>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-bottom-text">
+                    <p>Copyright 2025 © Bigtree Entertainment Pvt. Ltd. All Rights Reserved.</p>
+                    <p>The content and images used on this site are copyright protected and copyrights vests with the respective owners. The usage of the content and images on this website is intended to promote the works and no endorsement of the artist shall be implied. Unauthorized use is prohibited and punishable by law.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html> 
