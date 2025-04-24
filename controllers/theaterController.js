@@ -321,14 +321,6 @@ exports.deleteTheater = async (req, res) => {
             });
         }
 
-        const hasShows = await Show.exists({ theaterId: theaterId });
-        if (hasShows) {
-            return res.status(400).json({ 
-                success: false, 
-                message: 'Cannot delete theater with active shows. Please delete all associated shows first.' 
-            });
-        }
-
         try {
             if (theater.image && theater.image !== 'default-theater.jpg') {
                 const imagePath = path.join(__dirname, '../uploads/theaters', theater.image);
@@ -342,11 +334,8 @@ exports.deleteTheater = async (req, res) => {
 
         await Theater.findByIdAndDelete(theaterId);
         
-        return res.json({ 
-            success: true, 
-            message: 'Theater deleted successfully',
-            redirectUrl: '/admin/theaters'
-        });
+        req.flash('success', 'Theater deleted successfully');
+        return res.redirect('/admin/theaters');
     } catch (error) {
         console.error(error);
         return res.status(500).json({ 

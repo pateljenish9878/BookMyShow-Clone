@@ -17,11 +17,9 @@ require('./utils/syncUploads');
 
 const app = express();
 connectDB().then(async () => {
-    // Run data cleanup on startup to fix any invalid show data
     try {
         const cleanupShows = require('./utils/cleanupShows');
         const result = await cleanupShows();
-        console.log('Database cleanup completed:', result);
     } catch (err) {
         console.error('Error during database cleanup:', err);
     }
