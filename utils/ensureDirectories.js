@@ -13,9 +13,16 @@ const requiredDirectories = [
     'uploads/languages',
     'uploads/banners',
     'uploads/profiles',
+    'uploads/users',
+    'uploads/sliders',
     'uploads/temp',
     'public/uploads',
-    'public/uploads/profiles'
+    'public/uploads/profiles',
+    'public/uploads/movies',
+    'public/uploads/theaters',
+    'public/uploads/users',
+    'public/uploads/sliders',
+    'public/uploads/banners'
 ];
 
 // Create function to ensure directories exist

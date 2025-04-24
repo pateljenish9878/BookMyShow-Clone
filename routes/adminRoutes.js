@@ -146,7 +146,7 @@ const uploadProfile = multer({
             cb('Error: Images only (jpeg, jpg, png)!');
         }
     }
-}).single('profileImage');
+});
 
 // Dashboard
 router.get('/dashboard', authMiddleware, isAdmin, adminController.getDashboard);
@@ -262,7 +262,7 @@ router.post('/profile/change-password', authMiddleware, isAdmin, async (req, res
 });
 
 // Profile Photo Upload
-router.post('/profile/upload-photo', authMiddleware, isAdmin, uploadProfile, async (req, res) => {
+router.post('/profile/upload-photo', authMiddleware, isAdmin, uploadProfile.single('profilePic'), async (req, res) => {
     try {
         if (!req.file) {
             req.flash('error_msg', 'Please select an image to upload');
@@ -328,7 +328,7 @@ router.get('/users/add-admin', authMiddleware, isAdmin, (req, res) => {
     });
 });
 
-router.post('/users/admin', authMiddleware, isAdmin, uploadProfile, [
+router.post('/users/admin', authMiddleware, isAdmin, uploadProfile.single('profilePic'), [
     check('name', 'Name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
@@ -344,7 +344,7 @@ router.get('/users/add', authMiddleware, isAdmin, (req, res) => {
     });
 });
 
-router.post('/users', authMiddleware, isAdmin, uploadProfile, [
+router.post('/users', authMiddleware, isAdmin, uploadProfile.single('profilePic'), [
     check('name', 'Name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
     check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
@@ -354,7 +354,7 @@ router.post('/users', authMiddleware, isAdmin, uploadProfile, [
 // Dynamic parameter routes must come after specific paths
 router.get('/users/:id', authMiddleware, isAdmin, adminController.getUserById);
 router.get('/users/:id/edit', authMiddleware, isAdmin, adminController.getEditUserForm);
-router.put('/users/:id', authMiddleware, isAdmin, uploadProfile, [
+router.put('/users/:id', authMiddleware, isAdmin, uploadProfile.single('profilePic'), [
     check('name', 'Name is required').not().isEmpty(),
     check('email', 'Please include a valid email').isEmail(),
     check('phone', 'Phone number is required').not().isEmpty()

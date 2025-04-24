@@ -14,6 +14,9 @@ const flash = require('connect-flash');
 // Ensure all upload directories exist
 require('./utils/ensureDirectories');
 
+// Sync files between uploads and public/uploads directories
+require('./utils/syncUploads');
+
 const app = express();
 connectDB();
 
@@ -73,9 +76,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Static files
-app.use('/', express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Static files - Use absolute path.resolve for clarity
+app.use('/', express.static(path.resolve(__dirname, 'public')));
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
+app.use('/uploads/users', express.static(path.resolve(__dirname, 'uploads/users')));
+app.use('/uploads/movies', express.static(path.resolve(__dirname, 'uploads/movies')));
+app.use('/uploads/theaters', express.static(path.resolve(__dirname, 'uploads/theaters')));
+app.use('/uploads/profiles', express.static(path.resolve(__dirname, 'uploads/profiles')));
+app.use('/uploads/sliders', express.static(path.resolve(__dirname, 'uploads/sliders')));
+app.use('/uploads/banners', express.static(path.resolve(__dirname, 'uploads/banners')));
 
 // Set current user in response locals
 app.use((req, res, next) => {
