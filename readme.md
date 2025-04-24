@@ -6,4 +6,5 @@ password: 123456
 [http](http://localhost:4444/admin)
 
 ## Live Project Link
-https://bookmyshow-clone-usf4.onrender.com/
+User:- https://bookmyshow-clone-usf4.onrender.com/<br/>
+Admin:- https://bookmyshow-clone-usf4.onrender.com/admin
