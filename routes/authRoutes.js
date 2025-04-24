@@ -26,16 +26,9 @@ const uploadProfile = multer({
     storage: profileStorage,
     limits: { fileSize: 2 * 1024 * 1024 }, 
     fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
-        
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb(new Error('Only JPG and PNG image files are allowed'));
-        }
+        cb(null, true); 
     }
+    
 });
 
 router.get('/admin/login', (req, res) => {

@@ -36,30 +36,16 @@ const movieStorage = multer.diskStorage({
 const uploadTheater = multer({ 
     storage: theaterStorage,
     fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|webp/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype);
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb('Error: Images only (jpeg, jpg, png, webp)!');
-        }
-    }
+        cb(null, true); // Accept all file types
+    }    
 });
 
 const uploadMovie = multer({ 
     storage: movieStorage,
     fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|webp|avif/;
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = filetypes.test(file.mimetype) || file.mimetype === 'image/avif';
-        
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb('Error: Images only (jpeg, jpg, png, webp, avif)!');
-        }
+        cb(null, true); // Accept all file types
     }
+    
 }).fields([
     { name: 'image', maxCount: 1 },
     { name: 'backgroundImage', maxCount: 1 }
@@ -78,16 +64,9 @@ const upload = multer({
     storage,
     limits: { fileSize: 1000000 }, 
     fileFilter: (req, file, cb) => {
-        const fileTypes = /jpeg|jpg|png|svg/;
-        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = fileTypes.test(file.mimetype);
-        
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb('Error: Images only (jpeg, jpg, png, svg)!');
-        }
+        cb(null, true); // Accept all file types
     }
+    
 });
 
 const profileStorage = multer.diskStorage({
@@ -119,16 +98,9 @@ const uploadProfile = multer({
     storage: profileStorage,
     limits: { fileSize: 2000000 }, // 2MB limit
     fileFilter: (req, file, cb) => {
-        const fileTypes = /jpeg|jpg|png/;
-        const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
-        const mimetype = fileTypes.test(file.mimetype);
-        
-        if (mimetype && extname) {
-            return cb(null, true);
-        } else {
-            cb('Error: Images only (jpeg, jpg, png)!');
-        }
+        cb(null, true); // Accept all file types
     }
+    
 });
 
 
