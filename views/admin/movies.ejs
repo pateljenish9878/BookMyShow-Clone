@@ -81,7 +81,7 @@
                                     </td>
                                     <td><%= movie.title %></td>
                                     <td><%= movie.language || 'N/A' %></td>
-                                    <td><%= movie.duration ? `${movie.duration} mins` : 'N/A' %></td>
+                                    <td><%= movie.duration ? `${movie.duration}` : 'N/A' %></td>
                                     <td><%= movie.releaseDate ? new Date(movie.releaseDate).toLocaleDateString() : 'N/A' %></td>
                                     <td>
                                         <div class="d-flex gap-1">

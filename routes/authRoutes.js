@@ -7,11 +7,9 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Set up storage for profile images
 const profileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadDir = path.join(__dirname, '../uploads/users');
-        // Create the directory if it doesn't exist
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -24,10 +22,9 @@ const profileStorage = multer.diskStorage({
     }
 });
 
-// Set up multer for user profile uploads
 const uploadProfile = multer({
     storage: profileStorage,
-    limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+    limits: { fileSize: 2 * 1024 * 1024 }, 
     fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png/;
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
@@ -41,7 +38,6 @@ const uploadProfile = multer({
     }
 });
 
-// Admin Login routes
 router.get('/admin/login', (req, res) => {
     res.render('admin-login', { 
         formData: {},
@@ -54,38 +50,31 @@ router.post('/admin/login', [
     check('password', 'Password is required').exists()
 ], authController.adminLogin);
 
-// Authentication routes
 router.post('/logout', authController.logout);
 router.get('/logout', authController.logout);
 
-// Admin specific logout (separate from user logout)
 router.post('/admin/logout', authController.logout);
 router.get('/admin/logout', (req, res) => {
-    // Only clear the admin session, leave user session intact
     req.session.adminUser = null;
     res.redirect('/admin/login');
 });
 
 router.get('/user', authController.authenticate, authController.getUser);
 
-// Forgot password routes
 router.post('/forgot-password', [
     check('email', 'Please include a valid email').isEmail()
 ], authController.forgotPassword);
 
-// Reset password routes
 router.post('/reset-password', [
     check('email', 'Please include a valid email').isEmail(),
     check('otp', 'OTP is required').not().isEmpty(),
     check('newPassword', 'Password must be at least 6 characters').isLength({ min: 6 })
 ], authController.resetPassword);
 
-// Redirect root login to admin login
 router.get('/login', (req, res) => {
     res.redirect('/admin/login');
 });
 
-// User Login routes
 router.get('/user/login', (req, res) => {
     res.render('user-login', { 
         formData: {},
@@ -98,7 +87,6 @@ router.post('/user/login', [
     check('password', 'Password is required').exists()
 ], authController.userLogin);
 
-// User Registration routes
 router.get('/user/register', (req, res) => {
     res.render('user-register', { 
         formData: {},
@@ -122,11 +110,9 @@ router.post('/user/register',
     authController.registerUser
 );
 
-// User profile routes
 router.get('/user/profile', authController.authenticate, authController.getUserProfile);
 router.post('/user/profile', authController.authenticate, uploadProfile.single('profilePic'), authController.updateUserProfile);
 
-// Change password route
 router.get('/user/change-password', authController.authenticate, (req, res) => {
     res.render('user-change-password', { 
         errors: [],
@@ -149,7 +135,6 @@ router.post('/user/change-password',
     authController.changeUserPassword
 );
 
-// User Forgot Password routes
 router.get('/user/forgot-password', (req, res) => {
     res.render('user-forgot-password', { 
         formData: {},
@@ -162,7 +147,6 @@ router.post('/user/forgot-password', [
     check('email', 'Please include a valid email').isEmail()
 ], authController.userForgotPassword);
 
-// User Reset Password routes
 router.get('/user/reset-password', (req, res) => {
     res.render('user-reset-password', { 
         email: req.query.email || '',

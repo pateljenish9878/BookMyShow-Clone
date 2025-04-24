@@ -1,10 +1,7 @@
-// Function to generate 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// Configure email transporter
 const sendOTP = async (email, otp) => {
   try {
-    // For demo purposes, just return success
     return {
       success: true,
       message: 'OTP email would be sent in production'
@@ -14,7 +11,6 @@ const sendOTP = async (email, otp) => {
   }
 };
 
-// Send OTP for password reset
 const sendPasswordResetOTP = async (email, otp) => {
   try {
     return await sendOTP(email, otp);
@@ -23,14 +19,12 @@ const sendPasswordResetOTP = async (email, otp) => {
   }
 };
 
-// Send booking confirmation email
 const sendBookingConfirmation = async (booking) => {
     try {
         if (!booking) {
             return false;
         }
 
-        // Extract user email - either from populated userId or directly from booking
         const userEmail = booking.userId?.email || booking.customerEmail;
         const userName = booking.userId?.name || booking.customerName || 'Customer';
         
@@ -38,10 +32,8 @@ const sendBookingConfirmation = async (booking) => {
             return false;
         }
 
-        // Extract movie title
         const movieTitle = booking.movieId?.title || booking.movieTitle || 'Your movie';
         
-        // Format date for display
         let formattedDate;
         try {
             const date = new Date(booking.showDate);
@@ -55,7 +47,6 @@ const sendBookingConfirmation = async (booking) => {
             formattedDate = booking.showDate;
         }
 
-        // Create email content
         const subject = `Booking Confirmation - ${movieTitle}`;
         const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd;">
@@ -85,27 +76,13 @@ const sendBookingConfirmation = async (booking) => {
             </div>
         `;
 
-        // Configure email options
         const mailOptions = {
             from: process.env.EMAIL_FROM || 'no-reply@moviebooking.com',
             to: userEmail,
             subject: subject,
             html: html
         };
-        
-        // If you have a working email setup, uncomment this:
-        /*
-        const transport = nodemailer.createTransport({
-            service: process.env.EMAIL_SERVICE,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
-            }
-        });
-        
-        await transport.sendMail(mailOptions);
-        */
-        
+
         return true;
     } catch (error) {
         return false;

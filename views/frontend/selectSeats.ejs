@@ -8,18 +8,8 @@
     <link rel="icon" href="/images/favicon.png">
     <title>Select Seats - <%= movie.title %></title>
     <script>
-        // Print movie pricing information to the console for debugging
-        console.log("Movie Title: <%= movie.title %>");
-        
-        // Set these as window variables so they're accessible everywhere
-        // Use locals to prevent "Cannot access before initialization" error
         window.standardPriceValue = <%= typeof locals.standardPrice !== 'undefined' ? locals.standardPrice : 200 %>;
         window.premiumPriceValue = <%= typeof locals.premiumPrice !== 'undefined' ? locals.premiumPrice : 300 %>;
-        
-        console.log("Initial price values set:", {
-            standard: window.standardPriceValue,
-            premium: window.premiumPriceValue
-        });
     </script>
     <style>
         .seat-selection {
@@ -336,7 +326,6 @@
             const standardPrice = locals.standardPrice || 200;
             const premiumPrice = locals.premiumPrice || 300;
             
-            console.log("Rendering seat selection with prices:", standardPrice, premiumPrice);
             
             if (theater && theater.screens && theater.screens.length > 0) {
                 // Find the correct screen for this show
@@ -365,11 +354,9 @@
                 rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
             }
             
-            console.log(`Using theater configuration: ${rows.length} rows with ${seatsPerRow} seats per row`);
             
             // Ensure bookedSeats is an array
             const bookedSeatsList = Array.isArray(bookedSeats) ? bookedSeats : [];
-            console.log("Booked seats:", bookedSeatsList);
             
             rows.forEach(row => { 
             %>
@@ -499,7 +486,6 @@
             const standardPrice = window.standardPriceValue; 
             const premiumPrice = window.premiumPriceValue;
             
-            console.log("Seat selection page prices (from DOM ready):", { standardPrice, premiumPrice });
             
             const continueBtn = document.getElementById('continueBtn');
             const bookingForm = document.getElementById('bookingForm');
@@ -623,7 +609,6 @@
                 jsonData.selectedSeats = selectedSeats.join(',');
                 
                 // Log data for debugging
-                console.log('Sending booking data:', jsonData);
                 
                 // Show loading state
                 continueBtn.disabled = true;

@@ -3,12 +3,10 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
-// Configure multer storage for file uploads
 const storage = multer.diskStorage({
     destination: function(req, file, cb) {
         const uploadPath = path.join('uploads', 'sliders');
         
-        // Create directory if it doesn't exist
         if (!fs.existsSync(uploadPath)) {
             fs.mkdirSync(uploadPath, { recursive: true });
         }
@@ -21,7 +19,6 @@ const storage = multer.diskStorage({
     }
 });
 
-// File filter to only accept images
 const fileFilter = (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
         cb(null, true);
@@ -30,19 +27,16 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Initialize multer upload
 exports.upload = multer({ 
     storage: storage,
     fileFilter: fileFilter,
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5MB max size
+        fileSize: 5 * 1024 * 1024 
     }
 });
 
-// Show settings page
 exports.getSettingsPage = async (req, res) => {
     try {
-        // Get existing settings or create default
         let settings = await Setting.findOne();
         
         if (!settings) {
@@ -63,40 +57,33 @@ exports.getSettingsPage = async (req, res) => {
     }
 };
 
-// Update slider banners
 exports.updateSliderBanners = async (req, res) => {
     try {
-        const { page } = req.params; // 'homePage' or 'allMoviesPage'
+        const { page } = req.params; 
         
         if (!['homePage', 'allMoviesPage'].includes(page)) {
             return res.redirect('/admin/settings?flash_type=error&flash_message=Invalid+page+specified');
         }
         
-        // Get existing settings or create default
         let settings = await Setting.findOne();
         if (!settings) {
             settings = new Setting();
         }
         
-        // Initialize sliderBanners if not defined
         if (!settings.sliderBanners) {
             settings.sliderBanners = { homePage: [], allMoviesPage: [] };
         }
         
-        // Add new banner images if files were uploaded
         if (req.files && req.files.length > 0) {
-            // Add filenames to the appropriate page array
             const bannerImages = req.files.map(file => file.filename);
             
             if (!settings.sliderBanners[page]) {
                 settings.sliderBanners[page] = [];
             }
             
-            // Add the new banner images
             settings.sliderBanners[page] = [...settings.sliderBanners[page], ...bannerImages];
         }
         
-        // Update updatedAt timestamp
         settings.updatedAt = Date.now();
         
         await settings.save();
@@ -108,7 +95,6 @@ exports.updateSliderBanners = async (req, res) => {
     }
 };
 
-// Delete slider banner
 exports.deleteSliderBanner = async (req, res) => {
     try {
         const { page, filename } = req.params;
@@ -117,24 +103,20 @@ exports.deleteSliderBanner = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid page specified' });
         }
         
-        // Get existing settings
         const settings = await Setting.findOne();
         if (!settings || !settings.sliderBanners || !settings.sliderBanners[page]) {
             return res.status(404).json({ success: false, message: 'Settings not found' });
         }
         
-        // Remove the file from the array
         const index = settings.sliderBanners[page].indexOf(filename);
         if (index > -1) {
             settings.sliderBanners[page].splice(index, 1);
             
-            // Delete the file from the filesystem
             const filePath = path.join('uploads', 'sliders', filename);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
             
-            // Update settings
             settings.updatedAt = Date.now();
             await settings.save();
             

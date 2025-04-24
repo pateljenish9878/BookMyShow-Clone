@@ -22,15 +22,40 @@
                             <div class="search-data" style="position: absolute; display: flex; align-items: center; top: 11px; left: 8px;">
                                 <img src="/images/search.png" class="search-img" alt="">
                             </div>
-                            <form action="/all-movies" method="GET" class="search-form">
-                                <input type="text" name="search" class="search-field" placeholder="Search for Movies...." value="<%= searchQuery || '' %>">
+                            <form action="/all-movies" method="GET" class="search-form" style="position: relative; display: flex; align-items: center;">
+
+                                <input 
+                                    type="text" 
+                                    name="search" 
+                                    class="search-field" 
+                                    placeholder="Search for Movies...." 
+                                    value="<%= searchQuery || '' %>" 
+                                    id="searchInput"
+                                    style="padding-right: 30px; height: 36px; padding-left: 10px; border-radius: 5px; border: 1px solid #ccc;"
+                                >
+
                                 <% if (selectedLanguage) { %>
-                                <input type="hidden" name="language" value="<%= selectedLanguage %>">
+                                    <input type="hidden" name="language" value="<%= selectedLanguage %>">
                                 <% } %>
                                 <% if (selectedCategory) { %>
-                                <input type="hidden" name="category" value="<%= selectedCategory %>">
+                                    <input type="hidden" name="category" value="<%= selectedCategory %>">
                                 <% } %>
-                                <button class="search-btn" type="submit">Search</button>
+
+                                <button 
+                                    class="search-btn" 
+                                    type="submit" 
+                                    style="margin-left: 10px; height: 36px; padding: 0 15px; border: none; background-color: #f84464; color: white; border-radius: 5px; cursor: pointer;"
+                                >
+                                    Search
+                                </button>
+
+                                <span 
+                                    id="clearSearch" 
+                                    style="position: absolute; right: 120px; top: 8px; cursor: pointer; font-size: 18px; color: #999; display: none;"
+                                    title="Clear"
+                                >
+                                    &times;
+                                </span>
                             </form>
                         </div>
                     </div>
@@ -295,4 +320,25 @@
     },
     });
   </script>
+  <script>
+    const searchInput = document.getElementById("searchInput");
+    const clearBtn = document.getElementById("clearSearch");
+
+    function toggleClearBtn() {
+        clearBtn.style.display = searchInput.value.trim() ? "block" : "none";
+    }
+
+    // Show clear button only when input has value
+    searchInput.addEventListener("input", toggleClearBtn);
+
+    // Clear input and resubmit form
+    clearBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        toggleClearBtn();
+        searchInput.form.submit(); // Submits the form with cleared value
+    });
+
+    // Run once on load
+    toggleClearBtn();
+</script>
 </html>

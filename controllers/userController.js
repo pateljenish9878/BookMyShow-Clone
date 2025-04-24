@@ -1,7 +1,5 @@
-// Create test user for development environment
 exports.registerTest = async (req, res) => {
     try {
-        // Check if test user already exists
         const existingUser = await User.findOne({ email: 'test@example.com' });
         if (existingUser) {
             return res.status(200).json({
@@ -15,7 +13,6 @@ exports.registerTest = async (req, res) => {
             });
         }
 
-        // Create new test user
         const hashedPassword = await bcrypt.hash('test123', 10);
         const newUser = new User({
             name: 'Test User',

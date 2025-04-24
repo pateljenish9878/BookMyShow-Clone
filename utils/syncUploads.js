@@ -1,11 +1,6 @@
-/**
- * Utility to synchronize files between uploads and public/uploads directories
- * to ensure files are accessible after server restarts
- */
 const fs = require('fs');
 const path = require('path');
 
-// Define directory pairs to sync (source -> destination)
 const directoryPairs = [
     { source: 'uploads/users', dest: 'public/uploads/users' },
     { source: 'uploads/movies', dest: 'public/uploads/movies' },
@@ -15,9 +10,6 @@ const directoryPairs = [
     { source: 'uploads/banners', dest: 'public/uploads/banners' }
 ];
 
-/**
- * Copy a file from source to destination
- */
 const copyFile = (source, dest) => {
     try {
         if (fs.existsSync(source)) {
@@ -31,12 +23,8 @@ const copyFile = (source, dest) => {
     }
 };
 
-/**
- * Synchronize files between source and destination directories
- */
 const syncDirectory = (sourcePath, destPath) => {
     try {
-        // Ensure both directories exist
         if (!fs.existsSync(sourcePath)) {
             fs.mkdirSync(sourcePath, { recursive: true });
         }
@@ -44,18 +32,14 @@ const syncDirectory = (sourcePath, destPath) => {
             fs.mkdirSync(destPath, { recursive: true });
         }
 
-        // Read source directory
         const files = fs.readdirSync(sourcePath);
         
-        // Copy each file to destination if it doesn't exist there
         files.forEach(file => {
             const sourceFile = path.join(sourcePath, file);
             const destFile = path.join(destPath, file);
             
-            // Skip directories
             if (fs.statSync(sourceFile).isDirectory()) return;
             
-            // Copy file if it doesn't exist in destination
             if (!fs.existsSync(destFile)) {
                 copyFile(sourceFile, destFile);
                 
@@ -68,9 +52,6 @@ const syncDirectory = (sourcePath, destPath) => {
     }
 };
 
-/**
- * Synchronize all directory pairs
- */
 const syncAllDirectories = () => {
     directoryPairs.forEach(pair => {
         const sourcePath = path.resolve(pair.source);
@@ -80,7 +61,6 @@ const syncAllDirectories = () => {
     
 };
 
-// Run synchronization
 syncAllDirectories();
 
 module.exports = { syncAllDirectories, syncDirectory, copyFile }; 

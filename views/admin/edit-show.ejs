@@ -263,93 +263,47 @@
             
             // Initial fetch if theater is already selected
             if (theaterSelect.value) {
-                console.log("Loading screens for theater:", theaterSelect.value);
                 fetchScreens(theaterSelect.value);
             }
             
-            // Monitor form submission
             const form = document.getElementById('editShowForm');
             form.addEventListener('submit', function(event) {
-                // For debugging only - do not use in production
                 event.preventDefault();
                 
-                console.log('Edit form data being submitted:');
                 const formData = new FormData(form);
-                
-                for (const [key, value] of formData.entries()) {
-                    console.log(`${key}: ${value}`);
-                }
-                
-                // Check for multiple show times
+          
                 const showTimes = formData.getAll('showTimes[]');
-                console.log('All showTimes values:', showTimes);
                 
-                // Now submit the form programmatically
                 setTimeout(() => form.submit(), 100);
             });
         });
     </script>
 
-    <!-- For debugging purposes -->
-    <script>
-        console.log('Show data from server:');
-        console.log('Show ID: <%= typeof show._id === "object" ? show._id.toString() : show._id %>');
-        console.log('Movie ID: <%= typeof show.movieId === "object" ? show.movieId._id : show.movieId %>');
-        console.log('Theater ID: <%= typeof show.theaterId === "object" ? show.theaterId._id : show.theaterId %>');
-        console.log('Show Times: <%= JSON.stringify(show.showTimes || []) %>');
-        console.log('Show Time (legacy): <%= show.showTime %>');
-        console.log('Additional Times (legacy): <%= JSON.stringify(show.additionalTimes || []) %>');
-        
-        <% if (movies && movies.length > 0) { %>
-            console.log('Available movies:');
-            <% movies.forEach(movie => { %>
-                console.log('<%= movie._id %> - <%= movie.title %>');
-                const isSelected = '<%= show.movieId && typeof show.movieId === "object" ? show.movieId._id.toString() : (show.movieId ? show.movieId.toString() : "") %>' === '<%= movie._id.toString() %>';
-                console.log('Is selected:', isSelected);
-            <% }); %>
-        <% } %>
-    </script>
+    
 
-    <!-- Add this script right before the closing body tag -->
     <script>
-        // Run after page is fully loaded
+       
         window.addEventListener('load', function() {
-            console.log('Page fully loaded, fixing selections');
+          
             
-            // Get original IDs
             const originalMovieId = '<%= show.movieId && typeof show.movieId === "object" ? show.movieId._id : show.movieId %>';
             const originalTheaterId = '<%= show.theaterId && typeof show.theaterId === "object" ? show.theaterId._id : show.theaterId %>';
             const originalScreenId = '<%= show.screenId && typeof show.screenId === "object" ? show.screenId._id : show.screenId %>';
-            
-            console.log('Original values:', {
-                movieId: originalMovieId,
-                theaterId: originalTheaterId,
-                screenId: originalScreenId
-            });
-            
-            // Fix movie selection
             const movieSelect = document.getElementById('movieId');
             if (movieSelect && originalMovieId) {
-                console.log('Setting movie to:', originalMovieId);
                 movieSelect.value = originalMovieId;
             }
             
-            // Fix theater selection
             const theaterSelect = document.getElementById('theaterId');
             if (theaterSelect && originalTheaterId) {
-                console.log('Setting theater to:', originalTheaterId);
                 theaterSelect.value = originalTheaterId;
-                
-                // Trigger change event to load screens
                 const event = new Event('change', { bubbles: true });
                 theaterSelect.dispatchEvent(event);
             }
             
-            // After screens are loaded, fix screen selection
             setTimeout(function() {
                 const screenSelect = document.getElementById('screenId');
                 if (screenSelect && originalScreenId) {
-                    console.log('Setting screen to:', originalScreenId);
                     screenSelect.value = originalScreenId;
                 }
             }, 500);

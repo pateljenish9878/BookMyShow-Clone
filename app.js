@@ -11,16 +11,22 @@ const passport = require('./config/passport');
 const dotenv = require('dotenv');
 const flash = require('connect-flash');
 
-// Ensure all upload directories exist
 require('./utils/ensureDirectories');
 
-// Sync files between uploads and public/uploads directories
 require('./utils/syncUploads');
 
 const app = express();
-connectDB();
+connectDB().then(async () => {
+    // Run data cleanup on startup to fix any invalid show data
+    try {
+        const cleanupShows = require('./utils/cleanupShows');
+        const result = await cleanupShows();
+        console.log('Database cleanup completed:', result);
+    } catch (err) {
+        console.error('Error during database cleanup:', err);
+    }
+});
 
-// Middleware
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -29,31 +35,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors());
 
-// Support method overrides for PUT and DELETE 
 app.use(methodOverride(function(req, res) {
   if (req.body && typeof req.body === 'object' && '_method' in req.body) {
-    // look in urlencoded POST bodies and delete it
     var method = req.body._method;
     delete req.body._method;
     return method;
   }
 }));
-app.use(methodOverride('_method')); // Also keep the URL query param version
+app.use(methodOverride('_method'));
 
-// Configure express-session
 app.use(session({
   secret: process.env.SESSION_SECRET || 'bookMyShowSecret',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    maxAge: 30 * 24 * 60 * 60 * 1000 
   }
 }));
 
-// Initialize flash middleware
 app.use(flash());
 
-// Pass flash messages to views
 app.use((req, res, next) => {
   res.locals.success_msg = req.flash('success');
   res.locals.error_msg = req.flash('error');
@@ -62,21 +63,14 @@ app.use((req, res, next) => {
   next();
 });
 
-// Initialize passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Add session cleanup middleware to handle conflicting sessions
 app.use((req, res, next) => {
-  // Determine if this is an admin route
   const isAdminPath = req.path.startsWith('/admin');
-  
-  // Instead of clearing sessions, we'll keep both but use only the appropriate one
-  // based on the current route context (admin vs frontend)
   next();
 });
 
-// Static files - Use absolute path.resolve for clarity
 app.use('/', express.static(path.resolve(__dirname, 'public')));
 app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
 app.use('/uploads/users', express.static(path.resolve(__dirname, 'uploads/users')));
@@ -86,32 +80,25 @@ app.use('/uploads/profiles', express.static(path.resolve(__dirname, 'uploads/pro
 app.use('/uploads/sliders', express.static(path.resolve(__dirname, 'uploads/sliders')));
 app.use('/uploads/banners', express.static(path.resolve(__dirname, 'uploads/banners')));
 
-// Set current user in response locals
 app.use((req, res, next) => {
-  // Determine if this is an admin route
   const isAdminRoute = req.path.startsWith('/admin') && req.path !== '/admin/login';
   
-  // Reset all locals first
   res.locals.user = null;
   res.locals.adminUser = null;
   
-  // For admin routes - use ONLY adminUser session in locals
   if (isAdminRoute) {
     if (req.session.adminUser) {
       res.locals.adminUser = { ...req.session.adminUser };
     }
   } 
-  // For user/frontend routes - use ONLY user session in locals
   else {
     if (req.session.user) {
       res.locals.user = { ...req.session.user };
     }
   }
   
-  // Add default searchQuery to all renders
   res.locals.searchQuery = '';
   
-  // Only redirect to admin login for admin routes, not frontend routes
   const isStaticResource = req.path.startsWith('/uploads/') || 
                            req.path.startsWith('/css/') || 
                            req.path.startsWith('/js/') || 
@@ -124,25 +111,21 @@ app.use((req, res, next) => {
   next();
 });
 
-// Routes
 const indexRoutes = require('./routes/indexRoutes');
 const movieRoutes = require('./routes/movieRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 
-// Load auth routes first to ensure authentication routes take precedence
-app.use('/', authRoutes); // Auth routes will be like /login, /register, etc.
+app.use('/', authRoutes); 
 app.use('/admin', adminRoutes);
 app.use('/', indexRoutes);
 app.use('/admin-movies', movieRoutes);
 app.use('/bookings', bookingRoutes);
 
-// Add a route for public theater views
 app.get('/theaters/:id', require('./controllers/theaterController').getTheaterDetailsPublic);
 app.get('/movie/:id/theaters', require('./controllers/theaterController').getTheatersForMovie);
 
-// Error handling middleware
 app.use((req, res, next) => {
     res.status(404).render('404', {
         title: '404 - Page Not Found',
@@ -154,7 +137,6 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
     console.error('Global error handler caught:', err);
     
-    // Check if this is an API request
     const isApiRequest = req.xhr || 
         (req.headers.accept && req.headers.accept.includes('application/json')) ||
         (req.headers['content-type'] && req.headers['content-type'].includes('application/json'));

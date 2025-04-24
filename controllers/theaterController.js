@@ -5,7 +5,6 @@ const path = require('path');
 const mongoose = require('mongoose');
 const { debugDateString } = require('../utils/showHelpers');
 
-// Get all theaters
 exports.getTheaters = async (req, res) => {
     try {
         const theaters = await Theater.find().sort({ name: 1 });
@@ -23,7 +22,6 @@ exports.getTheaters = async (req, res) => {
     }
 };
 
-// Get theater by ID
 exports.getTheaterById = async (req, res) => {
     try {
         const theater = await Theater.findById(req.params.id);
@@ -35,14 +33,11 @@ exports.getTheaterById = async (req, res) => {
             });
         }
         
-        // Get show stats
         const Show = require('../models/Show');
         const Booking = require('../models/Booking');
         
-        // Count all shows for this theater
         const totalShows = await Show.countDocuments({ theaterId: theater._id });
         
-        // Get upcoming shows (shows with date >= today)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -53,20 +48,16 @@ exports.getTheaterById = async (req, res) => {
         .sort({ showDate: 1, showTime: 1 })
         .limit(5);
         
-        // Count bookings related to this theater
-        // If older data may not have theaterId, get shows first and then count bookings for those shows
         let totalBookings = 0;
         try {
-            // Get all shows for this theater
             const theaterShows = await Show.find({ theaterId: theater._id }).select('_id');
             const showIds = theaterShows.map(show => show._id);
             
-            // Count bookings for these shows
             if (showIds.length > 0) {
                 totalBookings = await Booking.countDocuments({
                     $or: [
-                        { theaterId: theater._id }, // For newer bookings with theaterId
-                        { showId: { $in: showIds } } // For older bookings without theaterId
+                        { theaterId: theater._id }, 
+                        { showId: { $in: showIds } } 
                     ]
                 });
             }
@@ -92,14 +83,12 @@ exports.getTheaterById = async (req, res) => {
     }
 };
 
-// Add theater form
 exports.getAddTheaterForm = (req, res) => {
     res.render('admin/add-theater', {
         user: req.user
     });
 };
 
-// Create theater
 exports.createTheater = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -121,7 +110,6 @@ exports.createTheater = async (req, res) => {
             contactNumber
         } = req.body;
 
-        // Check if theater with same name and location exists
         const existingTheater = await Theater.findOne({ name, location });
         if (existingTheater) {
             return res.status(400).render('admin/add-theater', {
@@ -131,7 +119,6 @@ exports.createTheater = async (req, res) => {
             });
         }
 
-        // Process screens data
         const screenData = [];
         if (req.body.screenName && Array.isArray(req.body.screenName)) {
             for (let i = 0; i < req.body.screenName.length; i++) {
@@ -146,7 +133,6 @@ exports.createTheater = async (req, res) => {
                 });
             }
         } else if (req.body.screenName) {
-            // Single screen
             screenData.push({
                 name: req.body.screenName,
                 totalSeats: req.body.screenSeats,
@@ -158,23 +144,20 @@ exports.createTheater = async (req, res) => {
             });
         }
 
-        // Calculate total seats from screen data
         const calculatedTotalSeats = screenData.reduce((sum, screen) => sum + parseInt(screen.totalSeats || 0), 0);
 
-        // Handle image upload
         let imageFileName = 'default-theater.jpg';
         if (req.file) {
             imageFileName = req.file.filename;
         }
 
-        // Create new theater
         const newTheater = new Theater({
             name,
             location,
             city,
             state,
             pincode,
-            totalSeats: calculatedTotalSeats, // Set total seats based on screen data
+            totalSeats: calculatedTotalSeats, 
             screens: screenData,
             facilities: facilities ? facilities.split(',').map(f => f.trim()) : [],
             image: imageFileName,
@@ -183,7 +166,6 @@ exports.createTheater = async (req, res) => {
 
         await newTheater.save();
         
-        // Set flash message for success
         req.flash('success', 'Theater created successfully');
         return res.redirect('/admin/theaters');
     } catch (error) {
@@ -196,7 +178,6 @@ exports.createTheater = async (req, res) => {
     }
 };
 
-// Edit theater form
 exports.getEditTheaterForm = async (req, res) => {
     try {
         const theater = await Theater.findById(req.params.id);
@@ -221,7 +202,6 @@ exports.getEditTheaterForm = async (req, res) => {
     }
 };
 
-// Update theater
 exports.updateTheater = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -244,14 +224,12 @@ exports.updateTheater = async (req, res) => {
             status
         } = req.body;
 
-        // Check if theater exists
         let theater = await Theater.findById(req.params.id);
         if (!theater) {
             req.flash('error', 'Theater not found');
             return res.redirect('/admin/theaters');
         }
 
-        // Check if theater with the same name and location exists (excluding current theater)
         if (name !== theater.name || location !== theater.location) {
             const existingTheater = await Theater.findOne({
                 _id: { $ne: req.params.id },
@@ -268,7 +246,6 @@ exports.updateTheater = async (req, res) => {
             }
         }
 
-        // Process screens data
         const screenData = [];
         if (req.body.screenName && Array.isArray(req.body.screenName)) {
             for (let i = 0; i < req.body.screenName.length; i++) {
@@ -283,7 +260,6 @@ exports.updateTheater = async (req, res) => {
                 });
             }
         } else if (req.body.screenName) {
-            // Single screen
             screenData.push({
                 name: req.body.screenName,
                 totalSeats: req.body.screenSeats,
@@ -295,13 +271,10 @@ exports.updateTheater = async (req, res) => {
             });
         }
 
-        // Calculate total seats from screen data
         const calculatedTotalSeats = screenData.reduce((sum, screen) => sum + parseInt(screen.totalSeats || 0), 0);
 
-        // Handle image upload
         if (req.file) {
             try {
-                // Delete old image if not default
                 if (theater.image && theater.image !== 'default-theater.jpg') {
                     const oldImagePath = path.join(__dirname, '../uploads/theaters', theater.image);
                     if (fs.existsSync(oldImagePath)) {
@@ -314,13 +287,12 @@ exports.updateTheater = async (req, res) => {
             }
         }
 
-        // Update theater
         theater.name = name;
         theater.location = location;
         theater.city = city;
         theater.state = state;
         theater.pincode = pincode;
-        theater.totalSeats = calculatedTotalSeats; // Set total seats based on screen data
+        theater.totalSeats = calculatedTotalSeats; 
         theater.screens = screenData;
         theater.facilities = facilities ? facilities.split(',').map(f => f.trim()) : [];
         theater.contactNumber = contactNumber;
@@ -328,7 +300,6 @@ exports.updateTheater = async (req, res) => {
 
         await theater.save();
         
-        // Set flash message for success
         req.flash('success', 'Theater updated successfully');
         return res.redirect('/admin/theaters');
     } catch (error) {
@@ -338,12 +309,10 @@ exports.updateTheater = async (req, res) => {
     }
 };
 
-// Delete theater
 exports.deleteTheater = async (req, res) => {
     try {
         const theaterId = req.params.id;
         
-        // Check if theater exists
         const theater = await Theater.findById(theaterId);
         if (!theater) {
             return res.status(404).json({ 
@@ -352,7 +321,6 @@ exports.deleteTheater = async (req, res) => {
             });
         }
 
-        // Check if theater has associated shows
         const hasShows = await Show.exists({ theaterId: theaterId });
         if (hasShows) {
             return res.status(400).json({ 
@@ -361,7 +329,6 @@ exports.deleteTheater = async (req, res) => {
             });
         }
 
-        // Delete theater image if not default
         try {
             if (theater.image && theater.image !== 'default-theater.jpg') {
                 const imagePath = path.join(__dirname, '../uploads/theaters', theater.image);
@@ -373,10 +340,8 @@ exports.deleteTheater = async (req, res) => {
             console.error('Error deleting theater image:', err);
         }
 
-        // Delete theater
         await Theater.findByIdAndDelete(theaterId);
         
-        // Return success response for AJAX
         return res.json({ 
             success: true, 
             message: 'Theater deleted successfully',
@@ -391,7 +356,6 @@ exports.deleteTheater = async (req, res) => {
     }
 };
 
-// Get theater by ID for frontend users
 exports.getTheaterDetailsPublic = async (req, res) => {
     try {
         const theater = await Theater.findById(req.params.id);
@@ -403,10 +367,8 @@ exports.getTheaterDetailsPublic = async (req, res) => {
             });
         }
         
-        // Get show stats
         const Show = require('../models/Show');
         
-        // Get upcoming shows (shows with date >= today)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -431,12 +393,10 @@ exports.getTheaterDetailsPublic = async (req, res) => {
     }
 };
 
-// Get theaters for a movie (select theaters page)
 exports.getTheatersForMovie = async (req, res) => {
     try {
         const movieId = req.params.id;
         
-        // Get the movie details
         const Movie = require('../models/Movie');
         const movie = await Movie.findById(movieId);
         
@@ -448,79 +408,48 @@ exports.getTheatersForMovie = async (req, res) => {
             });
         }
         
-        // Get all active theaters
         const theaters = await Theater.find({ status: true }).sort({ name: 1 });
-        
-        // Get the Show model to fetch show times
         const Show = require('../models/Show');
-        
-        // Get today's date as an ISO date string YYYY-MM-DD
         const today = new Date();
         const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
         
-        console.log('Theater selection - Today string:', todayString);
-        
-        // Check if date is provided in URL - use exact string without conversion
         let selectedDateStr = todayString;
         
         if (req.query.date) {
-            console.log('Date from URL:', req.query.date);
             
-            // If date from URL is a valid YYYY-MM-DD format, use it directly
             if (req.query.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 selectedDateStr = req.query.date;
-                console.log('Using exact date string from URL:', selectedDateStr);
-                
-                // Debug the date string format
                 debugDateString(selectedDateStr);
             }
         }
-        
-        console.log('Final selectedDateStr for filtering shows:', selectedDateStr);
-
-        // Create Date object for selected date (needed for some UI operations)
-        // But we'll use selectedDateStr for all date comparisons
         let selectedDate;
         try {
-            // Parse the date string to create a Date object at noon UTC to avoid timezone issues
             const [year, month, day] = selectedDateStr.split('-').map(Number);
             selectedDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-            console.log('Created selectedDate object:', selectedDate);
-            console.log('selectedDate ISO string:', selectedDate.toISOString());
         } catch (e) {
             console.error('Error parsing date:', e);
-            selectedDate = today; // fallback to today
+            selectedDate = today; 
         }
         
-        console.log('Selected date object:', selectedDate);
         
-        // Build the dates array for the date navigation UI
         const dates = [];
         for (let i = 0; i < 7; i++) {
             const dateObj = new Date(today);
             dateObj.setDate(today.getDate() + i);
             
-            // Get the date string in YYYY-MM-DD format
             const year = dateObj.getFullYear();
             const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
             const day = String(dateObj.getDate()).padStart(2, '0');
             const dateStr = `${year}-${month}-${day}`;
             
-            // Get day name
             const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
             
             dates.push({
                 date: dateObj,
                 day: dayName,
-                isToday: dateStr === selectedDateStr // Compare string dates for accuracy
+                isToday: dateStr === selectedDateStr 
             });
         }
-        
-        // Find shows and log the specific query being used
-        console.log(`MongoDB Query: Finding shows with movieId=${movieId}`);
-        
-        // Get all shows for this movie using aggregation to handle dates correctly
-        console.log('Finding shows for movie ID:', movieId);
         
         const shows = await Show.aggregate([
             {
@@ -530,12 +459,11 @@ exports.getTheatersForMovie = async (req, res) => {
             },
             {
                 $addFields: {
-                    // Make sure we have a consistent date string format for comparison
                     dateString: { 
                         $dateToString: { 
                             format: "%Y-%m-%d", 
                             date: "$showDate", 
-                            timezone: "UTC" // Explicitly use UTC to avoid timezone shifts
+                            timezone: "UTC" 
                         } 
                     }
                 }
@@ -571,36 +499,14 @@ exports.getTheatersForMovie = async (req, res) => {
                 $sort: { dateString: 1, showTime: 1 }
             }
         ]);
-        
-        console.log(`Found ${shows.length} shows for movie ID ${movieId} using aggregation`);
-        
-        // Sample the first few shows for debugging
-        if (shows.length > 0) {
-            // Log all the date strings to help debug the filtering issue
-            const dateStrings = [...new Set(shows.map(show => show.dateString))].sort();
-            console.log('All show dates available:', dateStrings);
-            console.log('We are filtering for date:', selectedDateStr);
-            
-            // Log the first few shows
-            console.log('Sample show data:');
-            for (let i = 0; i < Math.min(3, shows.length); i++) {
-                console.log(`Show ${i+1}:`);
-                console.log(`  dateString: ${shows[i].dateString}`);
-                console.log(`  original date: ${shows[i].showDate}`);
-                console.log(`  theater: ${shows[i].theaterInfo.name}`);
-                console.log(`  time: ${shows[i].showTime}`);
-            }
-        }
-        
-        // Group shows by theater
+
         const theaterShows = {};
         shows.forEach(show => {
             const theaterId = show.theaterId.toString();
             if (!theaterShows[theaterId]) {
                 theaterShows[theaterId] = [];
             }
-            
-            // Add the theater info to the show object
+          
             show.theaterId = {
                 _id: show.theaterId,
                 name: show.theaterInfo.name,
@@ -608,9 +514,9 @@ exports.getTheatersForMovie = async (req, res) => {
                 city: show.theaterInfo.city
             };
             
-            // Add formatted time if needed
+          
             if (!show.formattedTime) {
-                // Try to format the time from HH:MM to 12-hour format
+              
                 try {
                     const [hours, minutes] = show.showTime.split(':');
                     const hour = parseInt(hours, 10);
@@ -624,44 +530,24 @@ exports.getTheatersForMovie = async (req, res) => {
             
             theaterShows[theaterId].push(show);
         });
-        
-        // Log theater shows for debugging
-        console.log(`Grouped shows for ${Object.keys(theaterShows).length} theaters using aggregation`);
 
-        // Filtered count to ensure we have shows for the selected date
         let filteredShowCount = 0;
         
-        // For each theater, filter shows by date and log the detailed results
         Object.keys(theaterShows).forEach(theaterId => {
-            console.log(`Filtering shows for theater ${theaterId}`);
             const allTheaterShows = theaterShows[theaterId];
-            console.log(`Theater has ${allTheaterShows.length} total shows`);
-            
-            // Log all dates for this theater
             const theaterDates = [...new Set(allTheaterShows.map(s => s.dateString))].sort();
-            console.log(`Theater show dates: ${theaterDates.join(', ')}`);
-            
             const dateFilteredShows = allTheaterShows.filter(show => {
-                // Debug each show's date comparison
-                const showDateStr = show.dateString;
-                const isMatch = showDateStr === selectedDateStr;
-                
-                if (showDateStr === selectedDateStr) {
-                    console.log(`MATCH: Show date ${showDateStr} matches selected date ${selectedDateStr}`);
-                }
+            const showDateStr = show.dateString;
+            const isMatch = showDateStr === selectedDateStr;
                 
                 return isMatch;
             });
             
-            console.log(`Theater ${theaterId} has ${dateFilteredShows.length} shows for date ${selectedDateStr}`);
             
-            // CRITICAL FIX: Replace the theater shows array with the filtered shows
-            // This is essential for the view to display the correct shows
             theaterShows[theaterId] = dateFilteredShows;
             
             filteredShowCount += dateFilteredShows.length;
         });
-        console.log(`Shows available specifically for date ${selectedDateStr}: ${filteredShowCount}`);
         
         res.render('frontend/selectTheater', {
             movie,
@@ -669,10 +555,10 @@ exports.getTheatersForMovie = async (req, res) => {
             dates,
             today,
             selectedDate,
-            selectedDateStr, // Pass the exact string for date comparison
+            selectedDateStr, 
             theaterShows,
             searchQuery: '',
-            originalUrl: req.originalUrl // Pass the original URL to the template
+            originalUrl: req.originalUrl 
         });
         
     } catch (error) {

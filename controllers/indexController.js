@@ -12,7 +12,6 @@ exports.getHomepage = async (req, res) => {
 
         const movies = await Movie.find(query);
         
-        // Get slider banners from settings
         const settings = await Setting.findOne();
         const sliderBanners = settings && settings.sliderBanners && settings.sliderBanners.homePage 
             ? settings.sliderBanners.homePage.map(banner => `/uploads/sliders/${banner}`)
@@ -36,39 +35,31 @@ exports.getAllMovies = async (req, res) => {
         const language = req.query.language || "";
         const category = req.query.category || "";
         
-        // Pagination parameters
         const page = parseInt(req.query.page) || 1;
-        const limit = 12; // 12 movies per page
+        const limit = 12; 
         const skip = (page - 1) * limit;
         
         const query = {};
         
-        // Add search filter if provided
         if (searchQuery) {
             query.title = new RegExp(searchQuery, "i");
         }
         
-        // Add language filter if provided
         if (language) {
             query.language = language;
         }
         
-        // Add category filter if provided
         if (category) {
-            // Handle comma-separated categories with regex for partial match
-            query.category = { $regex: category, $options: "i" };
+           query.category = { $regex: category, $options: "i" };
         }
 
-        // Count total movies matching the query for pagination
         const totalMovies = await Movie.countDocuments(query);
         const totalPages = Math.ceil(totalMovies / limit);
 
-        // Get paginated movies
         const movies = await Movie.find(query)
             .skip(skip)
             .limit(limit);
         
-        // Get slider banners from settings
         const settings = await Setting.findOne();
         const sliderBanners = settings && settings.sliderBanners && settings.sliderBanners.allMoviesPage 
             ? settings.sliderBanners.allMoviesPage.map(banner => `/uploads/sliders/${banner}`)
@@ -79,7 +70,7 @@ exports.getAllMovies = async (req, res) => {
             searchQuery,
             selectedLanguage: language,
             selectedCategory: category,
-            category: category, // Add both variables to the template
+            category: category, 
             sliderBanners,
             pagination: {
                 page,

@@ -15,7 +15,6 @@ const settingsController = require('../controllers/settingsController');
 const bcrypt = require('bcryptjs');
 const fs = require('fs');
 
-// Multer storage configuration for theaters
 const theaterStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, '../uploads/theaters'));
@@ -25,7 +24,6 @@ const theaterStorage = multer.diskStorage({
     }
 });
 
-// Multer storage configuration for movies
 const movieStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, '../uploads/movies'));
@@ -56,14 +54,6 @@ const uploadMovie = multer({
         const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = filetypes.test(file.mimetype) || file.mimetype === 'image/avif';
         
-        console.log('File upload attempt:', {
-            originalname: file.originalname,
-            mimetype: file.mimetype,
-            extname: path.extname(file.originalname).toLowerCase(),
-            isValidExtname: filetypes.test(path.extname(file.originalname).toLowerCase()),
-            isValidMimetype: filetypes.test(file.mimetype) || file.mimetype === 'image/avif'
-        });
-        
         if (mimetype && extname) {
             return cb(null, true);
         } else {
@@ -75,7 +65,6 @@ const uploadMovie = multer({
     { name: 'backgroundImage', maxCount: 1 }
 ]);
 
-// Set up multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'public/uploads/');
@@ -87,7 +76,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ 
     storage,
-    limits: { fileSize: 1000000 }, // 1MB limit
+    limits: { fileSize: 1000000 }, 
     fileFilter: (req, file, cb) => {
         const fileTypes = /jpeg|jpg|png|svg/;
         const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
@@ -101,21 +90,15 @@ const upload = multer({
     }
 });
 
-// Set up multer for user profile picture uploads
 const profileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Try uploads/users first, then fallback to public/uploads/users
         const primaryPath = path.join(__dirname, '../uploads/users');
         const fallbackPath = path.join(__dirname, '../public/uploads/users');
         
-        // Check if the primary directory exists
         try {
-            // Use fs to check if the directory exists and is writable
             fs.accessSync(primaryPath, fs.constants.W_OK);
             cb(null, primaryPath);
         } catch (err) {
-            console.log('Primary uploads directory not writable, using fallback path:', fallbackPath);
-            // Create fallback directory if it doesn't exist
             try {
                 if (!fs.existsSync(fallbackPath)) {
                     fs.mkdirSync(fallbackPath, { recursive: true });
@@ -148,10 +131,9 @@ const uploadProfile = multer({
     }
 });
 
-// Dashboard
+
 router.get('/dashboard', authMiddleware, isAdmin, adminController.getDashboard);
 
-// Admin Profile
 router.get('/profile', authMiddleware, isAdmin, (req, res) => {
     res.render('admin/profile', {
         adminUser: req.session.adminUser,
@@ -159,7 +141,6 @@ router.get('/profile', authMiddleware, isAdmin, (req, res) => {
     });
 });
 
-// Profile Edit
 router.get('/profile/edit', authMiddleware, isAdmin, (req, res) => {
     res.render('admin/profile-edit', {
         adminUser: req.session.adminUser,
@@ -167,25 +148,21 @@ router.get('/profile/edit', authMiddleware, isAdmin, (req, res) => {
     });
 });
 
-// Profile Update
 router.post('/profile/update', authMiddleware, isAdmin, async (req, res) => {
     try {
         const { name, email, phone, emailNotifications } = req.body;
         const adminId = req.session.adminUser._id;
         
-        // Check if email is already in use
         const existingUser = await User.findOne({ email, _id: { $ne: adminId } });
         if (existingUser) {
             req.flash('error_msg', 'Email is already in use');
             return res.redirect('/admin/profile/edit');
         }
         
-        // Update user preferences
         const preferences = {
             emailNotifications: emailNotifications === 'on' || emailNotifications === true
         };
         
-        // Update user
         const updatedUser = await User.findByIdAndUpdate(
             adminId,
             { 
@@ -198,7 +175,6 @@ router.post('/profile/update', authMiddleware, isAdmin, async (req, res) => {
             { new: true }
         );
         
-        // Update session
         req.session.adminUser = {
             ...req.session.adminUser,
             name,
@@ -217,37 +193,31 @@ router.post('/profile/update', authMiddleware, isAdmin, async (req, res) => {
     }
 });
 
-// Change Password
 router.post('/profile/change-password', authMiddleware, isAdmin, async (req, res) => {
     try {
         const { currentPassword, newPassword, confirmPassword } = req.body;
         const adminId = req.session.adminUser._id;
         
-        // Validate password confirmation
         if (newPassword !== confirmPassword) {
             req.flash('error_msg', 'New passwords do not match');
             return res.redirect('/admin/profile/edit');
         }
         
-        // Find user
         const user = await User.findById(adminId);
         if (!user) {
             req.flash('error_msg', 'User not found');
             return res.redirect('/admin/profile/edit');
         }
         
-        // Check current password
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             req.flash('error_msg', 'Current password is incorrect');
             return res.redirect('/admin/profile/edit');
         }
         
-        // Hash new password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
-        // Update password
         user.password = hashedPassword;
         user.updatedAt = Date.now();
         await user.save();
@@ -261,7 +231,6 @@ router.post('/profile/change-password', authMiddleware, isAdmin, async (req, res
     }
 });
 
-// Profile Photo Upload
 router.post('/profile/upload-photo', authMiddleware, isAdmin, uploadProfile.single('profilePic'), async (req, res) => {
     try {
         if (!req.file) {
@@ -269,39 +238,30 @@ router.post('/profile/upload-photo', authMiddleware, isAdmin, uploadProfile.sing
             return res.redirect('/admin/profile');
         }
         
-        // Get the current admin user from session
         const adminUser = req.session.adminUser;
         
-        // Create a copy of the file in both directories for compatibility
         try {
-            // Create uploads/profiles directory if it doesn't exist
             const profilesDir = path.join(__dirname, '../uploads/profiles');
             if (!fs.existsSync(profilesDir)) {
                 fs.mkdirSync(profilesDir, { recursive: true });
             }
             
-            // Copy the file from uploads/users to uploads/profiles
             const sourcePath = req.file.path;
             const destPath = path.join(profilesDir, req.file.filename);
             
-            // Copy file if source exists
             if (fs.existsSync(sourcePath)) {
                 fs.copyFileSync(sourcePath, destPath);
-                console.log('Image file copied to profiles directory for compatibility');
             }
         } catch (err) {
             console.error('Error copying profile image:', err);
-            // Continue anyway since we have at least one copy
         }
         
-        // Update the user in the database
         const updatedUser = await User.findByIdAndUpdate(
             adminUser._id,
             { profilePic: req.file.filename },
             { new: true }
         );
         
-        // Update the session with the new profile pic
         req.session.adminUser = {
             ...req.session.adminUser,
             profilePic: req.file.filename
@@ -316,10 +276,8 @@ router.post('/profile/upload-photo', authMiddleware, isAdmin, uploadProfile.sing
     }
 });
 
-// User Management
 router.get('/users', authMiddleware, isAdmin, adminController.getUsers);
 
-// Admin-specific routes (need to be before the :id routes)
 router.get('/users/add-admin', authMiddleware, isAdmin, (req, res) => {
     res.render('admin/add-admin', {
         user: req.adminUser,
@@ -335,7 +293,6 @@ router.post('/users/admin', authMiddleware, isAdmin, uploadProfile.single('profi
     check('phone', 'Phone number is required').not().isEmpty()
 ], adminController.createAdmin);
 
-// Regular user routes
 router.get('/users/add', authMiddleware, isAdmin, (req, res) => {
     res.render('admin/add-user', {
         user: req.adminUser,
@@ -351,7 +308,6 @@ router.post('/users', authMiddleware, isAdmin, uploadProfile.single('profilePic'
     check('phone', 'Phone number is required').not().isEmpty()
 ], adminController.createUser);
 
-// Dynamic parameter routes must come after specific paths
 router.get('/users/:id', authMiddleware, isAdmin, adminController.getUserById);
 router.get('/users/:id/edit', authMiddleware, isAdmin, adminController.getEditUserForm);
 router.put('/users/:id', authMiddleware, isAdmin, uploadProfile.single('profilePic'), [
@@ -363,25 +319,20 @@ router.delete('/users/:id', authMiddleware, isAdmin, async (req, res) => {
     try {
         const userId = req.params.id;
         
-        // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, msg: 'User not found' });
         }
 
-        // Don't allow deleting self
-        // Safe comparison that avoids toString() errors
         const adminId = req.adminUser && req.adminUser._id ? req.adminUser._id.toString() : null;
         if (adminId && userId === adminId) {
             return res.status(400).json({ success: false, msg: 'Cannot delete yourself' });
         }
 
-        const userRole = req.query.returnRole || user.role; // Store the role before deletion
+        const userRole = req.query.returnRole || user.role; 
         
-        // Delete user
         await User.findByIdAndDelete(userId);
         
-        // Redirect back to the appropriate user list
         res.redirect(`/admin/users?role=${userRole}`);
     } catch (error) {
         console.error(error);
@@ -389,30 +340,24 @@ router.delete('/users/:id', authMiddleware, isAdmin, async (req, res) => {
     }
 });
 
-// Toggle user active status - PATCH version (original)
 router.patch('/users/:id/toggle-status', authMiddleware, isAdmin, async (req, res) => {
     try {
         const userId = req.params.id;
         
-        // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ success: false, msg: 'User not found' });
         }
 
-        // Don't allow deactivating self
-        // Safe comparison that avoids toString() errors
         const adminId = req.adminUser && req.adminUser._id ? req.adminUser._id.toString() : null;
 
         if (adminId && userId && userId === adminId) {
             return res.status(400).json({ success: false, msg: 'Cannot change your own status' });
         }
 
-        // Toggle active status
         user.active = !user.active;
         await user.save();
         
-        // Use returnRole if provided, otherwise use user.role
         const roleToUse = req.query.returnRole || user.role;
         res.redirect(`/admin/users?role=${roleToUse}`);
     } catch (error) {
@@ -421,20 +366,16 @@ router.patch('/users/:id/toggle-status', authMiddleware, isAdmin, async (req, re
     }
 });
 
-// Toggle user active status - POST version (alternative)
 router.post('/users/:id/toggle-status', authMiddleware, isAdmin, async (req, res) => {
     try {
         const userId = req.params.id;
         
-        // Check if user exists
         const user = await User.findById(userId);
         if (!user) {
             req.flash('error_msg', 'User not found');
             return res.redirect('/admin/users');
         }
 
-        // Don't allow deactivating self
-        // Safe comparison that avoids toString() errors
         const adminId = req.adminUser && req.adminUser._id ? req.adminUser._id.toString() : null;
 
         if (adminId && userId && userId === adminId) {
@@ -442,15 +383,12 @@ router.post('/users/:id/toggle-status', authMiddleware, isAdmin, async (req, res
             return res.redirect('/admin/users');
         }
 
-        // Toggle active status
         user.active = !user.active;
         await user.save();
         
-        // Set success flash message
         const statusText = user.active ? 'activated' : 'deactivated';
         req.flash('success_msg', `User ${user.name} has been ${statusText} successfully`);
         
-        // Use returnRole if provided, otherwise use user.role
         const roleToUse = req.query.returnRole || user.role;
         res.redirect(`/admin/users?role=${roleToUse}`);
     } catch (error) {
@@ -460,7 +398,6 @@ router.post('/users/:id/toggle-status', authMiddleware, isAdmin, async (req, res
     }
 });
 
-// Movie Management
 router.get('/movies', authMiddleware, isAdmin, adminMovieController.getAdminMovies);
 router.get('/movies/add', authMiddleware, isAdmin, adminMovieController.getAddMovieForm);
 router.post('/movies', authMiddleware, isAdmin, uploadMovie, [
@@ -487,7 +424,6 @@ router.put('/movies/:id', authMiddleware, isAdmin, uploadMovie, [
 ], adminMovieController.updateMovie);
 router.delete('/movies/:id', authMiddleware, isAdmin, adminMovieController.deleteMovie);
 
-// Theater Management
 router.get('/theaters', authMiddleware, isAdmin, theaterController.getTheaters);
 router.get('/theaters/add', authMiddleware, isAdmin, theaterController.getAddTheaterForm);
 router.post('/theaters', authMiddleware, isAdmin, uploadTheater.single('image'), [
@@ -510,7 +446,6 @@ router.put('/theaters/:id', authMiddleware, isAdmin, uploadTheater.single('image
 ], theaterController.updateTheater);
 router.delete('/theaters/:id', authMiddleware, isAdmin, theaterController.deleteTheater);
 
-// Language Management
 router.get('/languages', authMiddleware, isAdmin, languageController.getLanguages);
 router.get('/languages/add', authMiddleware, isAdmin, languageController.getAddLanguageForm);
 router.post('/languages', authMiddleware, isAdmin, [
@@ -524,7 +459,6 @@ router.put('/languages/:id', authMiddleware, isAdmin, [
 ], languageController.updateLanguage);
 router.delete('/languages/:id', authMiddleware, isAdmin, languageController.deleteLanguage);
 
-// Show Management
 router.get('/shows', authMiddleware, isAdmin, showController.getShows);
 router.get('/shows/add', authMiddleware, isAdmin, showController.getAddShowForm);
 router.post('/shows', authMiddleware, isAdmin, [
@@ -546,19 +480,15 @@ router.get('/shows/:id/delete', authMiddleware, isAdmin, showController.deleteSh
 router.delete('/shows/:id', authMiddleware, isAdmin, showController.deleteShow);
 router.get('/theaters/:theaterId/screens', authMiddleware, isAdmin, showController.getTheaterScreens);
 
-// Bookings Management
 router.get('/bookings', authMiddleware, isAdmin, adminController.getBookings);
 
-// Settings Management
 router.get('/settings', authMiddleware, isAdmin, settingsController.getSettingsPage);
 router.post('/settings/sliders/:page', authMiddleware, isAdmin, settingsController.upload.array('banners', 10), settingsController.updateSliderBanners);
 router.delete('/settings/sliders/:page/:filename', authMiddleware, isAdmin, settingsController.deleteSliderBanner);
 router.post('/settings', authMiddleware, isAdmin, upload.single('logo'), adminController.updateSettings);
 
-// Test route for shows
 router.get('/test-show', authMiddleware, isAdmin, showController.testCreateShow);
 
-// Test route for admin session
 router.get('/test-session', authMiddleware, isAdmin, (req, res) => {
     res.json({
         adminUser: req.session.adminUser,

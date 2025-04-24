@@ -1,10 +1,7 @@
-/**
- * Utility to ensure all required upload directories exist
- */
+
 const fs = require('fs');
 const path = require('path');
 
-// Define all required directories
 const requiredDirectories = [
     'uploads',
     'uploads/movies',
@@ -25,7 +22,6 @@ const requiredDirectories = [
     'public/uploads/banners'
 ];
 
-// Create function to ensure directories exist
 const ensureDirectoriesExist = () => {
     requiredDirectories.forEach(dir => {
         const fullPath = path.resolve(dir);
@@ -34,14 +30,12 @@ const ensureDirectoriesExist = () => {
             try {
                 fs.mkdirSync(fullPath, { recursive: true });
             } catch (err) {
-                // Directory creation failed, do nothing
+                
             }
         }
     });
 };
 
-// Execute the function
 ensureDirectoriesExist();
 
-// Export for use in other files
 module.exports = { ensureDirectoriesExist }; 

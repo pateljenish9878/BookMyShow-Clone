@@ -1,11 +1,9 @@
 const nodemailer = require('nodemailer');
 
-// Function to generate 6-digit OTP
 exports.generateOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
-// Configure email transporter
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -14,7 +12,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Send OTP for password reset
 exports.sendPasswordResetOTP = async (email, otp) => {
     try {
         const mailOptions = {
@@ -42,7 +39,6 @@ exports.sendPasswordResetOTP = async (email, otp) => {
     }
 };
 
-// Send booking confirmation email
 exports.sendBookingConfirmation = async (bookingData) => {
     try {
         const {
@@ -58,7 +54,6 @@ exports.sendBookingConfirmation = async (bookingData) => {
             totalAmount
         } = bookingData;
 
-        // Format the date properly
         const formattedDate = new Date(showDate + 'T00:00:00').toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
@@ -66,7 +61,6 @@ exports.sendBookingConfirmation = async (bookingData) => {
             day: 'numeric'
         });
 
-        // Format seat list
         const seatsList = seats.join(', ');
         
         const mailOptions = {
@@ -128,11 +122,9 @@ exports.sendBookingConfirmation = async (bookingData) => {
         };
 
         await transporter.sendMail(mailOptions);
-        console.log(`Booking confirmation email sent to ${email}`);
         return true;
     } catch (error) {
         console.error('Error sending booking confirmation email:', error);
-        // Don't throw error - booking should still proceed even if email fails
         return false;
     }
 };

@@ -21,7 +21,6 @@ const BookingSchema = new mongoose.Schema({
         ref: 'Screen',
         default: null
     },
-    // Add this virtual to support legacy code that may refer to 'screen'
     screen: {
         type: Object,
         default: function() {
@@ -103,7 +102,6 @@ const BookingSchema = new mongoose.Schema({
     }
 });
 
-// Update the updatedAt field on save
 BookingSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();

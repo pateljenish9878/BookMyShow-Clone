@@ -4,7 +4,6 @@ const { validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
 
-// Get all movies for admin
 exports.getAdminMovies = async (req, res) => {
     try {
         const movies = await Movie.find().sort({ releaseDate: -1 });
@@ -24,7 +23,6 @@ exports.getAdminMovies = async (req, res) => {
     }
 };
 
-// Get movie details
 exports.getMovieDetails = async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
@@ -52,7 +50,6 @@ exports.getMovieDetails = async (req, res) => {
     }
 };
 
-// Add movie form
 exports.getAddMovieForm = async (req, res) => {
     try {
         const languages = await Language.find({ status: true }).sort({ name: 1 });
@@ -72,7 +69,6 @@ exports.getAddMovieForm = async (req, res) => {
     }
 };
 
-// Create movie
 exports.createMovie = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -100,7 +96,6 @@ exports.createMovie = async (req, res) => {
             recommended
         } = req.body;
 
-        // Check if title already exists
         const existingMovie = await Movie.findOne({ title });
         if (existingMovie) {
             const languages = await Language.find({ status: true }).sort({ name: 1 });
@@ -114,7 +109,6 @@ exports.createMovie = async (req, res) => {
             });
         }
 
-        // Check if files are uploaded
         if (!req.files || !req.files.image || !req.files.backgroundImage) {
             const languages = await Language.find({ status: true }).sort({ name: 1 });
             
@@ -127,7 +121,6 @@ exports.createMovie = async (req, res) => {
             });
         }
 
-        // Create new movie
         const newMovie = new Movie({
             title,
             image: req.files.image[0].filename,
@@ -144,7 +137,6 @@ exports.createMovie = async (req, res) => {
 
         await newMovie.save();
         
-        // Redirect with success flash message
         return res.redirect('/admin/movies?flash_type=success&flash_message=Movie+created+successfully');
     } catch (error) {
         console.error(error);
@@ -160,7 +152,6 @@ exports.createMovie = async (req, res) => {
     }
 };
 
-// Edit movie form
 exports.getEditMovieForm = async (req, res) => {
     try {
         const movie = await Movie.findById(req.params.id);
@@ -191,12 +182,10 @@ exports.getEditMovieForm = async (req, res) => {
     }
 };
 
-// Update movie
 exports.updateMovie = async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
-            console.log('Validation errors:', errors.array());
             const languages = await Language.find({ status: true }).sort({ name: 1 });
             
             return res.status(400).render('admin/edit-movie', {
@@ -220,13 +209,11 @@ exports.updateMovie = async (req, res) => {
             recommended
         } = req.body;
 
-        // Check if movie exists
         let movie = await Movie.findById(req.params.id);
         if (!movie) {
             return res.redirect(`/admin/movies?flash_type=error&flash_message=Movie+not+found`);
         }
 
-        // Check if title already exists for another movie
         if (title !== movie.title) {
             const existingMovie = await Movie.findOne({ 
                 _id: { $ne: req.params.id },
@@ -258,12 +245,9 @@ exports.updateMovie = async (req, res) => {
             recommended: recommended === 'true'
         };
 
-        // Handle image uploads
         if (req.files) {
-            // Handle poster image
             if (req.files.image && req.files.image.length > 0) {
                 try {
-                    // Delete old image if it exists
                     if (movie.image) {
                         const oldImagePath = path.join(__dirname, '../uploads/movies', movie.image);
                         if (fs.existsSync(oldImagePath)) {
@@ -276,17 +260,14 @@ exports.updateMovie = async (req, res) => {
                         }
                     }
                     
-                    // Add new image to updateData
                     updateData.image = req.files.image[0].filename;
                 } catch (err) {
                     console.error('Error handling image upload:', err);
                 }
             }
             
-            // Handle background image
             if (req.files.backgroundImage && req.files.backgroundImage.length > 0) {
                 try {
-                    // Delete old background image if it exists
                     if (movie.backgroundImage) {
                         const oldBgPath = path.join(__dirname, '../uploads/movies', movie.backgroundImage);
                         if (fs.existsSync(oldBgPath)) {
@@ -299,7 +280,6 @@ exports.updateMovie = async (req, res) => {
                         }
                     }
                     
-                    // Add new background image to updateData
                     updateData.backgroundImage = req.files.backgroundImage[0].filename;
                 } catch (err) {
                     console.error('Error handling background image upload:', err);
@@ -307,14 +287,12 @@ exports.updateMovie = async (req, res) => {
             }
         }
 
-        // Update movie
         const updatedMovie = await Movie.findByIdAndUpdate(
             req.params.id,
             updateData,
             { new: true, runValidators: true }
         );
 
-        // Redirect with success message
         return res.redirect(`/admin/movies?flash_type=success&flash_message=Movie+updated+successfully`);
     } catch (error) {
         console.error('Error updating movie:', error);
@@ -322,12 +300,10 @@ exports.updateMovie = async (req, res) => {
     }
 };
 
-// Delete movie
 exports.deleteMovie = async (req, res) => {
     try {
         const movieId = req.params.id;
         
-        // Check if movie exists
         const movie = await Movie.findById(movieId);
         if (!movie) {
             return res.status(404).json({ 
@@ -336,7 +312,6 @@ exports.deleteMovie = async (req, res) => {
             });
         }
 
-        // Delete movie images - check both possible locations
         let imagePath = path.join(__dirname, '../uploads/movies', movie.image);
         if (!fs.existsSync(imagePath)) {
             imagePath = path.join(__dirname, '../uploads', movie.image);
@@ -347,7 +322,6 @@ exports.deleteMovie = async (req, res) => {
             bgImagePath = path.join(__dirname, '../uploads', movie.backgroundImage);
         }
         
-        // Attempt to delete image files (don't block if files can't be deleted)
         try {
             if (fs.existsSync(imagePath)) {
                 fs.unlinkSync(imagePath);
@@ -364,10 +338,8 @@ exports.deleteMovie = async (req, res) => {
             console.error('Error deleting movie background image:', err);
         }
 
-        // Delete movie
         await Movie.findByIdAndDelete(movieId);
         
-        // Return success response for AJAX request
         return res.json({ 
             success: true, 
             message: 'Movie deleted successfully',

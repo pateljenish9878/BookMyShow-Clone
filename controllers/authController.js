@@ -3,8 +3,6 @@ const bcrypt = require('bcryptjs');
 const { validationResult } = require('express-validator');
 const passport = require('passport');
 const { generateOTP, sendPasswordResetOTP } = require('../utils/emailService');
-
-// Admin login
 exports.adminLogin = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -31,7 +29,6 @@ exports.adminLogin = (req, res, next) => {
             });
         }
         
-        // Check if user has role 'admin'
         if (user.role !== 'admin') {
             return res.render('admin-login', { 
                 formData: { email: req.body.email },
@@ -39,7 +36,6 @@ exports.adminLogin = (req, res, next) => {
             });
         }
         
-        // Check if user is active
         if (!user.active) {
             return res.render('admin-login', { 
                 formData: { email: req.body.email },
@@ -56,70 +52,49 @@ exports.adminLogin = (req, res, next) => {
                 });
             }
             
-            // Set admin user in session (separate from regular user)
             req.session.adminUser = {
-                _id: user._id.toString(), // Store ID as string to avoid toString() issues
-                id: user._id.toString(),  // Include both formats for compatibility
+                _id: user._id.toString(), 
+                id: user._id.toString(),  
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                profilePic: user.profilePic || 'default-profile.png' // Include profile picture
+                profilePic: user.profilePic || 'default-profile.png' 
             };
             
-            // No longer clearing the user session - allow both to exist simultaneously
-            console.log('Admin login successful, maintaining any existing user session');
-            
-            // Create success message
             const successMessage = `Welcome, ${user.name}! You have successfully logged into the admin panel.`;
             
-            // Redirect with flash parameter in URL (more reliable than req.flash for immediate redirect)
             return res.redirect(`/admin/dashboard?flash_type=success&flash_message=${encodeURIComponent(successMessage)}`);
         });
     })(req, res, next);
 };
 
-// Logout user
 exports.logout = (req, res, next) => {
-    // Check if this is an admin or user logout based on the request path
     const isAdminLogout = req.path.includes('/admin') || req.originalUrl.includes('/admin');
     
-    // Get user info before clearing session
     const userName = isAdminLogout ? 
                     (req.session.adminUser ? req.session.adminUser.name : 'Admin') : 
                     (req.session.user ? req.session.user.name : 'User');
     
-    // Only clear the relevant session, not both
     if (req.session) {
         if (isAdminLogout) {
-            // Only clear the admin session data
-            console.log('Clearing only admin session data, preserving user session');
             req.session.adminUser = null;
             
-            // Create logout message
             const logoutMessage = `${userName} has been logged out successfully`;
             
-            // Redirect to admin login with toast message
             return res.redirect(`/admin/login?flash_type=success&flash_message=${encodeURIComponent(logoutMessage)}`);
         } else {
-            // Only clear the user session data
-            console.log('Clearing only user session data, preserving admin session');
             req.session.user = null;
             
-            // Clear any booking details as well
             req.session.bookingDetails = null;
             req.session.lastBookingId = null;
             
-            // Create logout message
             const logoutMessage = `${userName} has been logged out successfully`;
             
-            // Redirect to home with toast message
             return res.redirect(`/?flash_type=success&flash_message=${encodeURIComponent(logoutMessage)}`);
         }
     } else {
-        // Create logout message
         const logoutMessage = `${userName} has been logged out successfully`;
         
-        // Redirect based on logout source with toast message as URL parameter
         if (isAdminLogout) {
             res.redirect(`/admin/login?flash_type=success&flash_message=${encodeURIComponent(logoutMessage)}`);
         } else {
@@ -128,7 +103,6 @@ exports.logout = (req, res, next) => {
     }
 };
 
-// Get current user
 exports.getCurrentUser = async (req, res) => {
     try {
         if (!req.isAuthenticated()) {
@@ -145,17 +119,14 @@ exports.register = async (req, res) => {
     try {
         const { name, email, password, phone, role } = req.body;
         
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ success: false, message: 'User already exists' });
         }
         
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        // Create new user
         const user = new User({
             name,
             email,
@@ -173,13 +144,10 @@ exports.register = async (req, res) => {
             role: user.role
         };
         
-        // Set the appropriate session based on role
         if (user.role === 'admin') {
-            // Set admin session
             req.session.adminUser = userData;
             return res.redirect('/admin/dashboard');
         } else {
-            // Set regular user session
             req.session.user = userData;
             return res.redirect('/');
         }
@@ -193,38 +161,32 @@ exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        // Find user
         const user = await User.findOne({ email });
         if (!user) {
             return res.status(400).json({ success: false, message: 'Invalid credentials' });
         }
         
-        // Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ success: false, message: 'Invalid credentials' });
         }
         
-        // Create consistent user data object for session
         const userData = {
-            _id: user._id.toString(), // Store ID as string to avoid toString() issues
-            id: user._id.toString(),  // Include both formats for compatibility
+            _id: user._id.toString(), 
+            id: user._id.toString(),  
             name: user.name,
             email: user.email,
             role: user.role,
-            profilePic: user.profilePic || 'default-profile.png' // Include profile picture
+            profilePic: user.profilePic || 'default-profile.png' 
         };
         
-        // Set the appropriate session based on role and EXPLICITLY clear the other session
         if (user.role === 'admin') {
-            // Set admin session
             req.session.adminUser = userData;
-            req.session.user = null; // Explicitly clear user session
+            req.session.user = null; 
             return res.redirect('/admin/dashboard');
         } else {
-            // Set regular user session
             req.session.user = userData;
-            req.session.adminUser = null; // Explicitly clear admin session
+            req.session.adminUser = null; 
             return res.redirect('/');
         }
     } catch (err) {
@@ -241,25 +203,20 @@ exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         
-        // Find user
         const user = await User.findOne({ email, role: 'admin' });
         if (!user) {
             return res.status(404).json({ success: false, message: 'Admin account not found with this email' });
         }
         
-        // Generate OTP
         const otp = generateOTP();
         
-        // Set OTP expiry (15 minutes)
         const otpExpiry = new Date();
         otpExpiry.setMinutes(otpExpiry.getMinutes() + 15);
         
-        // Save OTP to user
         user.resetPasswordOTP = otp;
         user.resetPasswordOTPExpiry = otpExpiry;
         await user.save();
         
-        // Send OTP email
         await sendPasswordResetOTP(user.email, otp);
         
         return res.status(200).json({ 
@@ -277,7 +234,6 @@ exports.resetPassword = async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
         
-        // Find user
         const user = await User.findOne({ 
             email,
             resetPasswordOTP: otp,
@@ -291,11 +247,9 @@ exports.resetPassword = async (req, res) => {
             });
         }
         
-        // Hash new password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
-        // Update password and clear OTP fields
         user.password = hashedPassword;
         user.resetPasswordOTP = undefined;
         user.resetPasswordOTPExpiry = undefined;
@@ -325,7 +279,6 @@ exports.authenticateAdmin = (req, res, next) => {
     next();
 };
 
-// User login
 exports.userLogin = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -340,7 +293,6 @@ exports.userLogin = async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        // Find user
         const user = await User.findOne({ email });
         if (!user) {
             return res.render('user-login', { 
@@ -350,7 +302,6 @@ exports.userLogin = async (req, res) => {
             });
         }
         
-        // Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.render('user-login', { 
@@ -360,7 +311,6 @@ exports.userLogin = async (req, res) => {
             });
         }
         
-        // Check if user is active
         if (!user.active) {
             return res.render('user-login', { 
                 formData: { email },
@@ -369,21 +319,14 @@ exports.userLogin = async (req, res) => {
             });
         }
         
-        // Set user in session with consistent structure
         req.session.user = {
-            _id: user._id.toString(), // Store ID as string to avoid toString() issues
-            id: user._id.toString(),  // Include both formats for compatibility
+            _id: user._id.toString(), 
+            id: user._id.toString(),  
             name: user.name,
             email: user.email,
             role: user.role,
             profilePic: user.profilePic || 'default-profile.png'
         };
-        
-        // No longer clearing the admin session - allow both to exist simultaneously
-        console.log('User login successful, maintaining any existing admin session');
-        
-        // If the user was trying to book a movie, redirect to that page
-        // Make sure redirectTo never points to admin pages
         let redirectUrl = req.session.redirectTo || '/';
         if (redirectUrl.includes('/admin')) {
             redirectUrl = '/';
@@ -402,7 +345,6 @@ exports.userLogin = async (req, res) => {
     }
 };
 
-// Register new user
 exports.registerUser = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -417,7 +359,6 @@ exports.registerUser = async (req, res) => {
     try {
         const { name, email, password, phone } = req.body;
         
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.render('user-register', { 
@@ -427,30 +368,25 @@ exports.registerUser = async (req, res) => {
             });
         }
         
-        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
         
-        // Create user data object
         const userData = {
             name,
             email,
             password: hashedPassword,
             phone,
-            role: 'user', // Default role for self-registered users
+            role: 'user', 
             active: true
         };
         
-        // Handle profile image if uploaded
         if (req.file) {
             userData.profilePic = req.file.filename;
         }
         
-        // Create new user
         const user = new User(userData);
         await user.save();
         
-        // Set user in session with consistent structure
         req.session.user = {
             _id: user._id.toString(),
             id: user._id.toString(),
@@ -460,10 +396,8 @@ exports.registerUser = async (req, res) => {
             profilePic: user.profilePic || 'default-profile.png'
         };
         
-        // Explicitly clear the adminUser session to avoid contamination
         req.session.adminUser = null;
         
-        // If the user was trying to book a movie, redirect to that page
         const redirectUrl = req.session.redirectTo || '/';
         delete req.session.redirectTo;
         
@@ -479,17 +413,14 @@ exports.registerUser = async (req, res) => {
     }
 };
 
-// Get user profile
 exports.getUserProfile = async (req, res) => {
     try {
-        // ONLY use the user session, never use admin session for user profile
         if (!req.session.user || !req.session.user.id) {
             return res.status(401).redirect('/user/login');
         }
         
         const userId = req.session.user.id; // Only use the user session ID
         
-        // Find the user in the database
         const user = await User.findById(userId);
         
         if (!user) {
@@ -499,7 +430,6 @@ exports.getUserProfile = async (req, res) => {
             });
         }
         
-        // Render the user profile page
         res.render('user-profile', { 
             user,
             success: req.query.success || false,
@@ -515,10 +445,8 @@ exports.getUserProfile = async (req, res) => {
     }
 };
 
-// Update user profile
 exports.updateUserProfile = async (req, res) => {
     try {
-        // Get the current user ID from the session
         const userId = req.session.user && req.session.user.id ? req.session.user.id : 
                        (req.session.user && req.session.user._id ? req.session.user._id : null);
         
@@ -528,7 +456,6 @@ exports.updateUserProfile = async (req, res) => {
             });
         }
         
-        // Find the user in the database
         const user = await User.findById(userId);
         
         if (!user) {
@@ -537,15 +464,12 @@ exports.updateUserProfile = async (req, res) => {
             });
         }
         
-        // Update user fields
         const { name, email, phone } = req.body;
         
         user.name = name || user.name;
         user.phone = phone || user.phone;
         
-        // Update email only if it has changed
         if (email !== user.email) {
-            // Check if email exists
             const existingUser = await User.findOne({ email, _id: { $ne: userId } });
             if (existingUser) {
                 return res.render('user-profile', {
@@ -558,28 +482,22 @@ exports.updateUserProfile = async (req, res) => {
             user.email = email;
         }
         
-        // Handle profile image if uploaded
         if (req.file) {
-            // If user already has a custom profile pic and it's not the default, delete it
             if (user.profilePic && user.profilePic !== 'default-profile.png') {
                 const fs = require('fs');
                 const path = require('path');
                 const oldImagePath = path.join(__dirname, '../uploads/users/', user.profilePic);
                 
-                // Check if file exists before attempting to delete
                 if (fs.existsSync(oldImagePath)) {
                     fs.unlinkSync(oldImagePath);
                 }
             }
             
-            // Update to new profile picture
             user.profilePic = req.file.filename;
         }
         
-        // Save the updated user
         await user.save();
         
-        // Update session data with consistent structure
         if (req.session.user) {
             req.session.user = {
                 ...req.session.user,
@@ -591,7 +509,6 @@ exports.updateUserProfile = async (req, res) => {
             };
         }
         
-        // Redirect to profile page with success message
         res.redirect('/user/profile?success=true');
     } catch (err) {
         console.error(err);
@@ -604,7 +521,6 @@ exports.updateUserProfile = async (req, res) => {
     }
 };
 
-// Change user password
 exports.changeUserPassword = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -616,14 +532,12 @@ exports.changeUserPassword = async (req, res) => {
     }
 
     try {
-        // ONLY use the user session data for changing password
         if (!req.session.user || !req.session.user.id) {
             return res.status(401).redirect('/user/login');
         }
         
         const userId = req.session.user.id;
         
-        // Find the user in the database
         const user = await User.findById(userId);
         
         if (!user) {
@@ -632,7 +546,6 @@ exports.changeUserPassword = async (req, res) => {
             });
         }
         
-        // Verify current password
         const { currentPassword, newPassword } = req.body;
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         
@@ -644,15 +557,12 @@ exports.changeUserPassword = async (req, res) => {
             });
         }
         
-        // Hash new password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
-        // Update password
         user.password = hashedPassword;
         await user.save();
         
-        // Render success message
         res.render('user-change-password', {
             errors: [],
             success: true,
@@ -668,7 +578,6 @@ exports.changeUserPassword = async (req, res) => {
     }
 };
 
-// User forgot password
 exports.userForgotPassword = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -682,7 +591,6 @@ exports.userForgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         
-        // Find user with role 'user'
         const user = await User.findOne({ email, role: 'user' });
         if (!user) {
             return res.status(404).render('user-forgot-password', { 
@@ -692,7 +600,6 @@ exports.userForgotPassword = async (req, res) => {
             });
         }
         
-        // Check if user is active
         if (!user.active) {
             return res.status(403).render('user-forgot-password', { 
                 errors: [{ msg: 'Your account has been deactivated. Please contact support.' }],
@@ -701,22 +608,16 @@ exports.userForgotPassword = async (req, res) => {
             });
         }
         
-        // Generate OTP
         const otp = generateOTP();
-        
-        // Set OTP expiry (15 minutes)
         const otpExpiry = new Date();
         otpExpiry.setMinutes(otpExpiry.getMinutes() + 15);
         
-        // Save OTP to user
         user.resetPasswordOTP = otp;
         user.resetPasswordOTPExpiry = otpExpiry;
         await user.save();
         
-        // Send OTP email
         await sendPasswordResetOTP(user.email, otp);
         
-        // Render success message
         return res.render('user-reset-password', { 
             email: user.email,
             success: false,
@@ -733,7 +634,6 @@ exports.userForgotPassword = async (req, res) => {
     }
 };
 
-// User reset password
 exports.userResetPassword = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -747,7 +647,6 @@ exports.userResetPassword = async (req, res) => {
     try {
         const { email, otp, newPassword, confirmPassword } = req.body;
         
-        // Check if passwords match
         if (newPassword !== confirmPassword) {
             return res.status(400).render('user-reset-password', { 
                 errors: [{ msg: 'Passwords do not match' }],
@@ -756,7 +655,6 @@ exports.userResetPassword = async (req, res) => {
             });
         }
         
-        // Find user with valid OTP
         const user = await User.findOne({ 
             email,
             role: 'user',
@@ -772,17 +670,14 @@ exports.userResetPassword = async (req, res) => {
             });
         }
         
-        // Hash new password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
         
-        // Update password and clear OTP fields
         user.password = hashedPassword;
         user.resetPasswordOTP = undefined;
         user.resetPasswordOTPExpiry = undefined;
         await user.save();
         
-        // Show success message
         return res.render('user-reset-password', { 
             success: true,
             errors: [],

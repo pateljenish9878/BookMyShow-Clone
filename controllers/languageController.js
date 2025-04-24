@@ -1,7 +1,6 @@
 const Language = require('../models/Language');
 const { validationResult } = require('express-validator');
 
-// Get all languages
 exports.getLanguages = async (req, res) => {
     try {
         const languages = await Language.find().sort({ name: 1 });
@@ -19,14 +18,12 @@ exports.getLanguages = async (req, res) => {
     }
 };
 
-// Add language form
 exports.getAddLanguageForm = (req, res) => {
     res.render('admin/add-language', {
         user: req.user
     });
 };
 
-// Create language
 exports.createLanguage = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -40,7 +37,6 @@ exports.createLanguage = async (req, res) => {
 
         const { name, code, status } = req.body;
 
-        // Check if language exists
         const existingLanguage = await Language.findOne({ 
             $or: [
                 { name: name },
@@ -56,7 +52,6 @@ exports.createLanguage = async (req, res) => {
             });
         }
 
-        // Create new language
         const newLanguage = new Language({
             name,
             code,
@@ -74,7 +69,6 @@ exports.createLanguage = async (req, res) => {
     }
 };
 
-// Edit language form
 exports.getEditLanguageForm = async (req, res) => {
     try {
         const language = await Language.findById(req.params.id);
@@ -99,7 +93,6 @@ exports.getEditLanguageForm = async (req, res) => {
     }
 };
 
-// Update language
 exports.updateLanguage = async (req, res) => {
     try {
         const errors = validationResult(req);
@@ -114,7 +107,6 @@ exports.updateLanguage = async (req, res) => {
         const { name, code, status } = req.body;
         const languageId = req.params.id;
 
-        // Check if language exists
         let language = await Language.findById(languageId);
         if (!language) {
             return res.status(404).render('admin/error', {
@@ -123,7 +115,6 @@ exports.updateLanguage = async (req, res) => {
             });
         }
 
-        // Check if the updated code or name already exists for another language
         if (name !== language.name || code !== language.code) {
             const existingLanguage = await Language.findOne({ 
                 $and: [
@@ -144,7 +135,6 @@ exports.updateLanguage = async (req, res) => {
             }
         }
 
-        // Update language
         language.name = name;
         language.code = code;
         language.status = status === 'true';
@@ -160,19 +150,16 @@ exports.updateLanguage = async (req, res) => {
     }
 };
 
-// Delete language
 exports.deleteLanguage = async (req, res) => {
     try {
         const languageId = req.params.id;
         
-        // Check if language exists
         const language = await Language.findById(languageId);
         if (!language) {
             req.flash('error', 'Language not found');
             return res.redirect('/admin/languages');
         }
 
-        // Delete language
         await Language.findByIdAndDelete(languageId);
         
         req.flash('success', 'Language deleted successfully');
