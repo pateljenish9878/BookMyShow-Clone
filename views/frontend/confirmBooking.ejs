@@ -7,6 +7,12 @@
     <link rel="icon" href="/images/favicon.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <title>Confirm Booking - <%= movie.title %></title>
+    <script>
+        // Print movie pricing information to the console for debugging
+        console.log("Movie Title: <%= movie.title %>");
+        console.log("Standard Price from backend: <%= standardPrice %>");
+        console.log("Premium Price from backend: <%= premiumPrice %>");
+    </script>
     <style>
         .booking-confirmation {
             max-width: 800px;
@@ -353,13 +359,23 @@
                 <% 
                     // Calculate ticket prices based on seat types
                     const seatArray = selectedSeats.split(',');
-                    const premiumRows = ['G', 'H', 'I', 'J'];
-                    const premiumSeats = seatArray.filter(seat => premiumRows.includes(seat.charAt(0)));
-                    const standardSeats = seatArray.filter(seat => !premiumRows.includes(seat.charAt(0)));
                     
-                    // Use the server-provided prices instead of hard-coded values
+                    // Define premium seats based on row letter prefix
+                    // Consider all rows from 'F' to 'Z' as premium
+                    const isPremiumSeat = (seat) => {
+                        const row = seat.charAt(0);
+                        return row >= 'F' && row <= 'Z';
+                    };
+                    
+                    // Filter seats into premium and standard categories
+                    const premiumSeats = seatArray.filter(seat => isPremiumSeat(seat));
+                    const standardSeats = seatArray.filter(seat => !isPremiumSeat(seat));
+                    
+                    // Use the server-provided prices
                     const stdPrice = parseInt(standardPrice);
                     const premPrice = parseInt(premiumPrice);
+                    
+                    console.log("Prices in confirmBooking page:", { standardPrice: stdPrice, premiumPrice: premPrice });
                     
                     const standardTotal = standardSeats.length * stdPrice;
                     const premiumTotal = premiumSeats.length * premPrice;

@@ -241,9 +241,6 @@
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
-            // Always get the URL date if it exists - use the value passed from the controller
-            const urlDate = locals.selectedDateStr || '';
-            
             // Get today's date parts
             const todayObj = new Date();
             const todayYear = todayObj.getFullYear();
@@ -251,10 +248,8 @@
             const todayDay = todayObj.getDate();
             const todayIsoString = `${todayYear}-${String(todayMonth).padStart(2, '0')}-${String(todayDay).padStart(2, '0')}`;
             
-            // Selected date is either from URL or today
-            const selectedDateStr = urlDate || todayIsoString;
-            
-            console.log('DATE NAVIGATION - Selected date:', selectedDateStr, 'URL date:', urlDate);
+            // Log selectedDateStr for debugging
+            console.log("Using selectedDateStr in date navigation:", selectedDateStr);
             
             // Generate 7 days starting from today
             for(let i = 0; i < 7; i++) {
@@ -272,7 +267,11 @@
                 
                 // Check if this is the selected date - compare exact string values
                 const isActive = selectedDateStr === isoString;
-                console.log(`DATE ITEM: ${isoString}, Selected: ${selectedDateStr}, Is Active: ${isActive}`);
+                
+                // Log for the selected date to help with debugging
+                if (isActive) {
+                    console.log(`ACTIVE DATE ITEM: ${isoString}, day: ${days[dayOfWeek]}, date: ${date}`);
+                }
             %>
                 <div class="date-item <%= isActive ? 'active' : '' %>" data-date="<%= isoString %>">
                     <div class="day"><%= days[dayOfWeek] %></div>
@@ -319,12 +318,28 @@
                                 // Check if real show data is available for this theater
                                 if (locals.theaterShows && theaterShows[theater._id.toString()] && theaterShows[theater._id.toString()].length > 0) {
                                     // Get the date from the controller
-                                    const filterDate = locals.selectedDateStr || todayIsoString;
+                                    const filterDate = selectedDateStr;
                                     
-                                    console.log('FILTER DATE FROM SERVER SIDE:', filterDate);
+                                    console.log('FILTER DATE FROM SERVER:', filterDate);
+                                    console.log('Theater ID:', theater._id.toString());
+                                    console.log('Shows available for this theater:', theaterShows[theater._id.toString()].length);
                                     
-                                    // Filter shows for the selected date - compare raw date strings without Date conversion
+                                    // Log all available dates for this theater before filtering
+                                    const allDatesForTheater = [...new Set(theaterShows[theater._id.toString()].map(s => s.dateString))];
+                                    console.log('All dates for this theater:', allDatesForTheater.join(', '));
+                                    
+                                    // Filter shows for the selected date - using the dateString property added in the aggregation
                                     const todayShows = theaterShows[theater._id.toString()].filter(show => {
+                                        // First try to use the dateString property from MongoDB aggregation
+                                        if (show.dateString) {
+                                            const isMatch = show.dateString === filterDate;
+                                            if (isMatch) {
+                                                console.log(`Show match! ${show.dateString} = ${filterDate} (${show.showTime})`);
+                                            }
+                                            return isMatch;
+                                        }
+                                        
+                                        // If no dateString property, try to create one from showDate
                                         let showDateStr;
                                         if (show.showDate) {
                                             if (typeof show.showDate === 'string') {
@@ -333,22 +348,33 @@
                                                     showDateStr = show.showDate;
                                                 } else {
                                                     // Try to extract just the date part without timezone conversion
-                                                    const parts = show.showDate.split('T')[0];
-                                                    showDateStr = parts;
+                                                    showDateStr = show.showDate.split('T')[0];
                                                 }
                                             } else if (show.showDate instanceof Date) {
                                                 // Format date manually without using toISOString() to avoid timezone issues
                                                 const year = show.showDate.getFullYear();
-                                                const month = String(show.showDate.getMonth() + 1).padStart(2, '0'); // months are 0-based
+                                                const month = String(show.showDate.getMonth() + 1).padStart(2, '0'); 
                                                 const day = String(show.showDate.getDate()).padStart(2, '0');
                                                 showDateStr = `${year}-${month}-${day}`;
                                             }
                                         }
-                                        console.log(`Show date: ${showDateStr}, Selected date: ${filterDate}`);
+                                        
+                                        // Debug comparison
+                                        if (showDateStr === filterDate) {
+                                            console.log(`Show match! ${showDateStr} = ${filterDate} (${show.showTime})`);
+                                        } else {
+                                            console.log(`Show NO match: ${showDateStr} ≠ ${filterDate} (${show.showTime})`);
+                                        }
+                                        
                                         return showDateStr === filterDate;
                                     });
                                     
+                                    console.log(`Filtered shows for ${theater.name} on ${filterDate}: ${todayShows.length}`);
+                                    
                                     if (todayShows.length > 0) {
+                                        console.log(`Found ${todayShows.length} shows for theater ${theater.name} on date ${filterDate}`);
+                                        console.log(`Show times: ${todayShows.map(s => s.showTime).join(', ')}`);
+                                        
                                         // Sort shows by time
                                         todayShows.sort((a, b) => {
                                             return a.showTime.localeCompare(b.showTime);
@@ -381,7 +407,7 @@
                                                     <small style="display: block; font-size: 10px; color: #666;">
                                                         <%= screenName %> <%= screenType %>
                                                         <% if (show.price) { %>
-                                                        <span style="color: #f84464; font-weight: bold;">₹<%= show.price %></span>
+                                                            <span style="color: #f84464; font-weight: bold;">₹<%= show.price %>-<%= parseInt(show.price) + 100 %></span>
                                                         <% } %>
                                                     </small>
                                                 <% } %>
@@ -441,24 +467,33 @@
             // Get the date from URL parameter
             let urlParams = new URLSearchParams(window.location.search);
             let urlDate = urlParams.get('date');
-            let selectedDateStr = "<%= filterDate %>"; // Default from server
+            
+            // Use the selectedDateStr from the server
+            let selectedDateStr = "<%= selectedDateStr %>";
+            console.log("Client-side initialized with selectedDateStr:", selectedDateStr);
             
             // Handle date navigation
             function activateSelectedDate() {
+                // First remove active class from all date items
                 document.querySelectorAll('.date-item').forEach(function(dateItem) {
                     dateItem.classList.remove('active');
                 });
                 
-                // Find the date element to activate
-                let dateToActivate = selectedDateStr;
+                // Now find and activate the matching date item
+                let foundActiveDate = false;
                 document.querySelectorAll('.date-item').forEach(function(dateItem) {
                     let isoString = dateItem.getAttribute('data-date');
-                    let isActive = (isoString === dateToActivate);
-                    
-                    if (isActive) {
+                    if (isoString === selectedDateStr) {
                         dateItem.classList.add('active');
+                        foundActiveDate = true;
+                        console.log("Activated date:", isoString);
                     }
                 });
+                
+                // If no date was activated (should not happen normally), log it
+                if (!foundActiveDate) {
+                    console.warn("No matching date item found for:", selectedDateStr);
+                }
             }
             
             // Initialize active date
@@ -469,23 +504,29 @@
                 dateItem.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                    let selectedDate = this.getAttribute('data-date');
-                    if (selectedDate === selectedDateStr) {
+                    let newDate = this.getAttribute('data-date');
+                    console.log("Clicked on date:", newDate);
+                    
+                    if (newDate === selectedDateStr) {
+                        console.log("Date already active, not changing.");
                         return; // Date already active
                     }
                     
                     // Redirect to same page with new date parameter
                     let currentUrl = new URL(window.location.href);
-                    currentUrl.searchParams.set('date', selectedDate);
+                    currentUrl.searchParams.set('date', newDate);
+                    console.log("Redirecting to:", currentUrl.toString());
                     window.location.href = currentUrl.toString();
                 });
             });
 
-            // Initialize tooltips
-            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                return new bootstrap.Tooltip(tooltipTriggerEl);
-            });
+            // Initialize tooltips if Bootstrap is available
+            if (typeof bootstrap !== 'undefined') {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
         });
     </script>
 </body>

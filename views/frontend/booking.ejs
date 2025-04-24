@@ -223,28 +223,15 @@
                                         <span class="price-value">₹<%= booking.totalAmount || 0 %></span>
                                     </div>
                                     
-                                    <div class="booking-status <%= status.class %>">
-                                        <%= status.text %>
-                                    </div>
+                                    
                                 </div>
                                 
                                 <div class="booking-actions">
-                                    <% 
-                                    // Show cancel button only if booking is not cancelled and show time is more than 3 hours away
-                                    let canCancel = false;
-                                    if (booking.status !== 'cancelled' && booking.showDate && booking.showTime) {
-                                        const showDateTime = new Date(`${new Date(booking.showDate).toISOString().split('T')[0]}T${booking.showTime}`);
-                                        const now = new Date();
-                                        const hoursDifference = (showDateTime - now) / (1000 * 60 * 60);
-                                        canCancel = hoursDifference >= 3;
-                                    }
-                                    %>
+                                   
                                     
                                     <a href="/bookings/success/<%= booking._id %>" class="booking-btn view-btn">View Ticket</a>
                                     
-                                    <% if (canCancel) { %>
-                                        <button class="booking-btn cancel-btn" onclick="cancelBooking('<%= booking._id %>')">Cancel</button>
-                                    <% } %>
+                                    
                                 </div>
                             </div>
                         </div>

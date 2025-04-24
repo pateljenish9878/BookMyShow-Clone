@@ -2,6 +2,8 @@ const Show = require('../models/Show');
 const Movie = require('../models/Movie');
 const Theater = require('../models/Theater');
 const { validationResult } = require('express-validator');
+const mongoose = require('mongoose');
+const { findShowByExactDate } = require('../utils/showHelpers');
 
 // Get all shows
 exports.getShows = async (req, res) => {
@@ -212,7 +214,19 @@ exports.createShow = async (req, res) => {
 
         // Format the date properly
         const formattedDate = new Date(showDate);
-        formattedDate.setHours(0, 0, 0, 0);
+        
+        // Important fix for timezone-safe date handling:
+        // Extract year, month, day directly from the input string to avoid timezone conversion issues
+        const dateComponents = showDate.split('-');
+        const year = parseInt(dateComponents[0]);
+        const month = parseInt(dateComponents[1]) - 1; // JavaScript months are 0-indexed
+        const day = parseInt(dateComponents[2]);
+        
+        // Create a UTC date at noon on the specified day to ensure consistency across timezones
+        const utcNoonDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+        
+        console.log(`Creating date from components: year=${year}, month=${month}, day=${day}`);
+        console.log(`Input date: ${showDate}, UTC noon date: ${utcNoonDate.toISOString()}`);
         
         // Create a batch of show times
         const showsToCreate = [];
@@ -239,7 +253,7 @@ exports.createShow = async (req, res) => {
             const existingShow = await Show.findOne({
                 theaterId,
                 screenId,
-                showDate: formattedDate,
+                showDate: utcNoonDate,
                 showTime: formattedTime
             });
 
@@ -253,7 +267,7 @@ exports.createShow = async (req, res) => {
                 movieId,
                 theaterId,
                 screenId,
-                showDate: formattedDate,
+                showDate: utcNoonDate,
                 showTime: formattedTime,
                 price,
                 bookedSeats: []
@@ -465,7 +479,19 @@ exports.updateShow = async (req, res) => {
 
         // Format the date properly
         const formattedDate = new Date(showDate);
-        formattedDate.setHours(0, 0, 0, 0);
+        
+        // Important fix for timezone-safe date handling:
+        // Extract year, month, day directly from the input string to avoid timezone conversion issues
+        const dateComponents = showDate.split('-');
+        const year = parseInt(dateComponents[0]);
+        const month = parseInt(dateComponents[1]) - 1; // JavaScript months are 0-indexed
+        const day = parseInt(dateComponents[2]);
+        
+        // Create a UTC date at noon on the specified day to ensure consistency across timezones
+        const utcNoonDate = new Date(Date.UTC(year, month, day, 12, 0, 0));
+        
+        console.log(`Creating date from components: year=${year}, month=${month}, day=${day}`);
+        console.log(`Input date: ${showDate}, UTC noon date: ${utcNoonDate.toISOString()}`);
         
         // Format the first time for the primary show we're updating
         let formattedTime;
@@ -480,7 +506,7 @@ exports.updateShow = async (req, res) => {
             _id: { $ne: req.params.id },
             theaterId,
             screenId,
-            showDate: formattedDate,
+            showDate: utcNoonDate,
             showTime: formattedTime
         });
 
@@ -498,7 +524,7 @@ exports.updateShow = async (req, res) => {
         show.movieId = movieId;
         show.theaterId = theaterId;
         show.screenId = screenId;
-        show.showDate = formattedDate;
+        show.showDate = utcNoonDate;
         show.showTime = formattedTime;
         show.price = price;
 
@@ -527,7 +553,7 @@ exports.updateShow = async (req, res) => {
                 const duplicate = await Show.findOne({
                     theaterId,
                     screenId,
-                    showDate: formattedDate,
+                    showDate: utcNoonDate,
                     showTime: additionalTime
                 });
 
@@ -541,7 +567,7 @@ exports.updateShow = async (req, res) => {
                     movieId,
                     theaterId,
                     screenId,
-                    showDate: formattedDate,
+                    showDate: utcNoonDate,
                     showTime: additionalTime,
                     price,
                     bookedSeats: []
@@ -632,6 +658,82 @@ exports.testCreateShow = async (req, res) => {
             success: false,
             message: 'Failed to create test show',
             error: error.message
+        });
+    }
+};
+
+// Create a new show for testing April 24th date
+exports.createTestShowApril24 = async (req, res) => {
+    try {
+        // Get necessary models
+        const Movie = require('../models/Movie');
+        const Theater = require('../models/Theater');
+        const Show = require('../models/Show');
+        
+        // Get the first movie and theater
+        const movies = await Movie.find().limit(1);
+        const theaters = await Theater.find().limit(1);
+        
+        if (!movies.length || !theaters.length) {
+            return res.status(404).json({
+                success: false,
+                message: 'No movies or theaters found'
+            });
+        }
+        
+        const movie = movies[0];
+        const theater = theaters[0];
+        const screenId = theater.screens && theater.screens.length > 0 ? theater.screens[0]._id : new mongoose.Types.ObjectId();
+        
+        // Create a date for April 24, 2025 at noon UTC to avoid timezone issues
+        const targetDateStr = '2025-04-24';
+        const targetDate = new Date(`${targetDateStr}T12:00:00.000Z`);
+        
+        console.log('Creating test show with:');
+        console.log('Movie:', movie.title);
+        console.log('Theater:', theater.name);
+        console.log('Date:', targetDate.toISOString());
+        console.log('Date String:', targetDateStr);
+        
+        // Create a test show with the special date
+        const newShow = new Show({
+            movieId: movie._id,
+            theaterId: theater._id,
+            screenId: screenId,
+            showDate: targetDate,
+            showTime: '14:00',
+            price: 250,
+            bookedSeats: []
+        });
+        
+        // Save the show
+        await newShow.save();
+        
+        // Verify using direct date string comparison (how system will search later)
+        const dateStr = targetDate.toISOString().split('T')[0];
+        console.log('Date will be queried as:', dateStr);
+        
+        // Check if show can be found with exact date string
+        const foundShow = await findShowByExactDate(movie._id, theater._id, targetDateStr, '14:00');
+        
+        return res.json({
+            success: true,
+            message: 'Test show created for April 24th at 14:00',
+            show: {
+                id: newShow._id,
+                movie: movie.title,
+                theater: theater.name,
+                date: targetDate,
+                time: '14:00',
+                dateString: newShow.dateString, // Using virtual property
+                foundInTest: !!foundShow
+            }
+        });
+    } catch (error) {
+        console.error('Error creating test show:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error: ' + error.message
         });
     }
 }; 

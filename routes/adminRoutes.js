@@ -567,4 +567,7 @@ router.get('/test-session', authMiddleware, isAdmin, (req, res) => {
     });
 });
 
+// Debug routes for testing date handling
+router.get('/create-test-april24', authMiddleware, isAdmin, showController.createTestShowApril24);
+
 module.exports = router; 

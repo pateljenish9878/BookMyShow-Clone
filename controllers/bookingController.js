@@ -179,6 +179,7 @@ exports.selectSeats = async (req, res) => {
         console.log('Theater ID (params):', req.params.theaterId);
         console.log('Date (query):', req.query.date);
         console.log('Time (query):', req.query.time);
+        console.log('Session user:', req.session && req.session.user ? req.session.user.name : 'None');
 
         // Additional date debugging
         if (req.query.date) {
@@ -186,6 +187,12 @@ exports.selectSeats = async (req, res) => {
             
             // Don't convert to Date object - use the string directly
             console.log('Using exact date string from URL');
+        } else {
+            console.error('No date provided in query parameters');
+            return res.status(400).render('error', {
+                message: 'Date is required for seat selection',
+                title: 'Selection Error'
+            });
         }
 
         // Get movieId and theaterId from URL parameters, date and time from query parameters
@@ -195,6 +202,12 @@ exports.selectSeats = async (req, res) => {
         
         // Validate all required parameters
         if (!movieId || !theaterId || !date || !time) {
+            console.error('Missing required parameters:', {
+                movieId: movieId ? 'present' : 'missing',
+                theaterId: theaterId ? 'present' : 'missing',
+                date: date ? 'present' : 'missing',
+                time: time ? 'present' : 'missing',
+            });
             return res.status(400).render('error', {
                 message: 'Missing required parameters for seat selection',
                 title: 'Selection Error'
@@ -206,6 +219,12 @@ exports.selectSeats = async (req, res) => {
         const theater = await Theater.findById(theaterId);
         
         if (!movie || !theater) {
+            console.error('Movie or theater not found:', {
+                movieId,
+                theaterId,
+                movieFound: !!movie,
+                theaterFound: !!theater
+            });
             return res.status(404).render('error', {
                 message: 'Movie or theater not found',
                 title: 'Not Found'
@@ -237,82 +256,34 @@ exports.selectSeats = async (req, res) => {
         
         console.log('Total booked seats from bookings:', bookedSeats.length);
         
-        // Set default prices
+        // Find the show for this movie, theater, date and time
+        const show = await findShowByExactDate(movieId, theaterId, originalDate, time);
+        console.log('Found show for seat selection:', show ? `Show ID: ${show._id}` : 'No show found');
+        
+        // Get screen info from show if available
+        let screen = null;
+        let seats = [];
+        if (show && show.screenId) {
+            // Try to find the screen from the theater
+            if (theater.screens && theater.screens.length > 0) {
+                screen = theater.screens.find(s => s._id.toString() === show.screenId.toString());
+                console.log('Found screen from theater:', screen ? screen.name : 'Not found');
+            }
+        }
+        
+        // Make sure show is defined before trying to access properties
         let standardPrice = 200;
         let premiumPrice = 300;
         
-        // Find the show to get the ticket price using our custom function
-        console.log(`Looking for show with Movie=${movieId}, Theater=${theaterId}, Date=${originalDate}, Time=${time}`);
-        
-        // Use the custom function that avoids timezone issues
-        const show = await findShowByExactDate(movieId, theaterId, originalDate, time);
-        
-        // Set default screen info
-        let screenId = null;
-        let screenName = 'Screen 1'; // Default screen name
-        
-        // If a show is found, get all details
         if (show) {
-            console.log('=== SHOW FOUND ===');
-            console.log('Show ID:', show._id);
-            console.log('Show Date String:', show.dateString || 'Not available');
+            // Use the price field directly from the show model
+            standardPrice = show.price || 200;
+            premiumPrice = standardPrice + 100; // Always 100 more than standard
             
-            // Extract screen information
-            if (show.screenId) {
-                screenId = show.screenId;
-                console.log('Screen ID from show:', screenId);
-            }
-            
-            if (show.screenName) {
-                screenName = show.screenName;
-                console.log('Screen Name from show:', screenName);
-            } else if (show.screen && show.screen.name) {
-                screenName = show.screen.name;
-                console.log('Screen Name from screen object:', screenName);
-            }
-            
-            // Special handling for Kesari Chapter 2 movie
-            if (movie.title.includes('Kesari Chapter')) {
-                console.log('Applying special pricing for Kesari Chapter 2');
-                standardPrice = 150;
-                premiumPrice = 250;
-                console.log(`Using Kesari Chapter 2 special prices: Standard=${standardPrice}, Premium=${premiumPrice}`);
-            }
-            // Special handling for Chhava movie
-            else if (movie.title.includes('Chhava')) {
-                console.log('Applying special pricing for Chhava');
-                standardPrice = 350;
-                premiumPrice = 450;
-                console.log(`Using Chhava special prices: Standard=${standardPrice}, Premium=${premiumPrice}`);
-            }
-            // Check if show has explicit standardPrice and premiumPrice
-            else if (show.standardPrice && show.premiumPrice) {
-                standardPrice = parseInt(show.standardPrice);
-                premiumPrice = parseInt(show.premiumPrice);
-                console.log(`Using explicit prices: Standard=${standardPrice}, Premium=${premiumPrice}`);
-            } 
-            // Fall back to single price if standardPrice is not available
-            else if (show.price) {
-                console.log('Price:', show.price);
-                standardPrice = parseInt(show.price);
-                premiumPrice = standardPrice + 100;
-                console.log(`Using calculated prices from show.price: Standard=${standardPrice}, Premium=${premiumPrice}`);
-            }
-            // If no prices available in the show object, use defaults
-            else {
-                standardPrice = 250;
-                premiumPrice = 350;
-                console.log(`No price information in show, using defaults: Standard=${standardPrice}, Premium=${premiumPrice}`);
-            }
-        } else {
-            console.log('No shows found, using default prices');
-            standardPrice = 250;
-            premiumPrice = 350;
+            // Log the prices directly from the database
+            console.log(`Using show price from database: ${show.price}`);
+            console.log(`Standard price: ${standardPrice}, Premium price: ${premiumPrice}`);
         }
-        
-        console.log(`Using show prices: Standard=${standardPrice}, Premium=${premiumPrice}`);
-        console.log('Screen information: ID =', screenId, 'Name =', screenName);
-        console.log('Rendering seat selection with prices:', standardPrice, premiumPrice);
         
         console.log('=== RENDERING SEAT SELECTION ===');
         console.log(`Movie: ${movie.title} (${movieId})`);
@@ -320,18 +291,24 @@ exports.selectSeats = async (req, res) => {
         console.log(`Standard Price: ${standardPrice}`);
         console.log(`Premium Price: ${premiumPrice}`);
         
-        // Render the seat selection page with the URL date, not a converted date
-        res.render('frontend/selectSeats', {
+        // Render the seat selection page
+        return res.render('frontend/selectSeats', {
             movie,
             theater,
-            date: originalDate, // Use the original date string from URL
-            time,
-            bookedSeats,
-            standardPrice,
+            screen,
+            show,
+            standardPrice, 
             premiumPrice,
-            screenId,
-            screenName,
-            selectedDate: originalDate // Pass selected date explicitly 
+            seats: seats || [],
+            bookedSeats: bookedSeats || [],  // Add bookedSeats
+            screenId: screen ? screen._id : null,  // Add screenId for template
+            screenName: screen ? screen.name : 'Screen 1',  // Add screenName for template
+            showDate: originalDate,
+            showTime: time,
+            date: originalDate,  // Add date alias for backward compatibility
+            time: time,  // Add time alias for backward compatibility
+            searchQuery: '',
+            baseUrl: req.protocol + '://' + req.get('host')
         });
         
     } catch (err) {
@@ -346,6 +323,13 @@ exports.selectSeats = async (req, res) => {
 // Show booking confirmation page
 exports.confirmBooking = async (req, res) => {
     try {
+        // Log full request body for debugging
+        console.log('Received booking request:', {
+            body: req.body,
+            contentType: req.headers['content-type'],
+            method: req.method
+        });
+        
         // Extract booking details from the request body
         const { 
             movieId, 
@@ -362,16 +346,24 @@ exports.confirmBooking = async (req, res) => {
             customerPhone  // Add customer phone to the extracted data
         } = req.body;
         
-        console.log('Received booking data:', req.body);
+        console.log('Extracted booking data:', {
+            movieId, 
+            theaterId, 
+            date, 
+            time, 
+            selectedSeats: selectedSeats ? (typeof selectedSeats === 'string' ? selectedSeats.substring(0, 20) + '...' : 'array') : 'missing',
+            standardPrice,
+            premiumPrice
+        });
         
         // Debug session information
         console.log('===== SESSION DEBUG IN CONFIRM BOOKING =====');
-        console.log('User session:', req.session.user ? {
+        console.log('User session:', req.session && req.session.user ? {
             id: req.session.user.id || req.session.user._id,
             name: req.session.user.name,
             role: req.session.user.role
         } : 'None');
-        console.log('Admin session:', req.session.adminUser ? {
+        console.log('Admin session:', req.session && req.session.adminUser ? {
             id: req.session.adminUser.id || req.session.adminUser._id,
             name: req.session.adminUser.name,
             role: req.session.adminUser.role
@@ -383,148 +375,186 @@ exports.confirmBooking = async (req, res) => {
         // ONLY use the user session, never adminUser
         let userData = {};
         
-        if (req.session.user) {
-            // Session user - preferred method
+        // Check if we have user data in the session
+        if (req.session && req.session.user) {
             userData = {
                 id: req.session.user.id || req.session.user._id,
                 name: req.session.user.name,
                 email: req.session.user.email,
-                phone: req.session.user.phone || ''
+                phone: req.session.user.phone || customerPhone || ""
             };
-            console.log('Using session user data for booking:', userData);
+            
+            console.log('Using user data from session:', userData);
         } else if (req.user) {
-            // Passport authenticated user
+            // Fallback to passport user if available
             userData = {
                 id: req.user._id,
                 name: req.user.name,
                 email: req.user.email,
-                phone: req.user.phone || ''
+                phone: req.user.phone || customerPhone || ""
             };
-            console.log('Using passport user data for booking:', userData);
+            
+            console.log('Using user data from passport:', userData);
         } else {
-            // Guest user - redirect to login
-            console.log('No user data found, redirecting to login');
-            return res.status(403).json({ 
+            console.error('No user data found in session or passport!');
+            return res.status(401).json({ 
                 success: false, 
-                message: 'Please login to continue with booking',
-                redirectToLogin: true
+                message: 'User authentication required. Please log in again.',
+                redirectTo: '/user/login'
             });
         }
-        
-        // Include customer phone from the request body or from user data if available
-        const finalCustomerPhone = customerPhone || userData.phone || '';
-        console.log('Customer phone for booking:', finalCustomerPhone);
 
-        // Validate required fields with detailed logging
-        const missingFields = [];
-        if (!movieId) missingFields.push('movieId');
-        if (!theaterId) missingFields.push('theaterId');
-        if (!date) missingFields.push('date');
-        if (!time) missingFields.push('time');
-        if (!selectedSeats) missingFields.push('selectedSeats');
-        if (!totalPrice) missingFields.push('totalPrice');
+        // Validate required parameters
+        const missingParams = [];
+        if (!movieId) missingParams.push('movieId');
+        if (!theaterId) missingParams.push('theaterId');
+        if (!date) missingParams.push('date');
+        if (!time) missingParams.push('time');
+        if (!selectedSeats) missingParams.push('selectedSeats');
         
-        if (missingFields.length > 0) {
-            console.error('Missing required fields:', missingFields);
+        if (missingParams.length > 0) {
+            console.error('Missing required parameters for booking confirmation:', missingParams);
             return res.status(400).json({ 
                 success: false, 
-                message: `Missing required booking information: ${missingFields.join(', ')}` 
+                message: `Missing required parameters: ${missingParams.join(', ')}`
+            });
+        }
+        
+        // Convert selectedSeats to array if it's a string
+        const seats = Array.isArray(selectedSeats) ? selectedSeats : selectedSeats.split(',');
+        
+        console.log('Parsed seats:', seats);
+        
+        if (!seats.length) {
+            console.error('No seats selected for booking');
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Please select at least one seat'
             });
         }
 
-        // Find the movie and theater
+        // Get movie and theater data
         const movie = await Movie.findById(movieId);
         const theater = await Theater.findById(theaterId);
         
         if (!movie || !theater) {
-            const notFound = [];
-            if (!movie) notFound.push('Movie');
-            if (!theater) notFound.push('Theater');
-            console.error(`${notFound.join(' and ')} not found:`, { movieId, theaterId });
-            
+            console.error('Movie or theater not found');
             return res.status(404).json({ 
                 success: false, 
-                message: `${notFound.join(' and ')} not found` 
-            });
-        }
-
-        // Find the show using the helper function
-        const show = await findShowByExactDate(movieId, theaterId, date, time);
-        
-        if (!show) {
-            console.error('Show not found for parameters:', { movieId, theaterId, date, time });
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Show not found. Please check the date and time.' 
+                message: 'Movie or theater not found'
             });
         }
         
-        // Get screen information from show or use provided values
-        const finalScreenId = screenId || (show.screenId ? show.screenId : null);
-        const finalScreenName = screenName || (show.screenName ? show.screenName : 'Screen 1');
+        // Convert date string to Date object
+        // Keep the original date string for UI and the Date object for the database
+        const originalDate = date;
+        let showDate;
         
-        console.log('Final screen information:', {
-            screenId: finalScreenId,
-            screenName: finalScreenName
-        });
-
-        // Parse the selected seats and seatPrices
-        const selectedSeatsArray = selectedSeats.includes(',') 
-            ? selectedSeats.split(',') 
-            : [selectedSeats];
-            
-        let seatPricesArray;
         try {
-            // Try to parse if it's a JSON string, otherwise use as-is
-            seatPricesArray = typeof seatPrices === 'string' 
-                ? JSON.parse(seatPrices) 
-                : seatPrices || [];
-        } catch (e) {
-            console.error('Error parsing seatPrices:', e);
-            seatPricesArray = [];
+            // If date is in YYYY-MM-DD format, parse it
+            if (originalDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                showDate = new Date(originalDate);
+            } else {
+                // Try to parse other date formats
+                showDate = new Date(originalDate);
+            }
+            
+            // Check if the date is valid
+            if (isNaN(showDate.getTime())) {
+                throw new Error('Invalid date');
+            }
+        } catch (error) {
+            // Fallback to current date if parsing fails
+            console.error('Error parsing date:', error);
+            showDate = new Date();
         }
         
-        console.log('Parsed data:', {
-            selectedSeatsArray,
-            seatPricesArray,
-            totalPrice
-        });
-
-        // Calculate convenience fee (5% of base price)
-        const totalPriceNumber = parseInt(totalPrice, 10) || 0;
+        // Get the show for this movie, theater, date and time
+        const show = await findShowByExactDate(movieId, theaterId, originalDate, time);
         
-        // Calculate base price (original ticket price before convenience fee)
-        // Since totalPrice = basePrice + (basePrice * 0.05)
-        // totalPrice = basePrice * 1.05
-        // Therefore basePrice = totalPrice / 1.05
-        const basePrice = Math.round(totalPriceNumber / 1.05);
-        const convenienceFee = totalPriceNumber - basePrice;
-
-        // Store booking details in session for payment
+        console.log('Found show for booking:', show ? show._id : 'No show found');
+        
+        // Parse the seat prices from JSON string if available
+        let parsedSeatPrices = [];
+        if (seatPrices) {
+            try {
+                parsedSeatPrices = JSON.parse(seatPrices);
+            } catch (error) {
+                console.error('Error parsing seat prices:', error);
+                // We'll calculate prices based on standard/premium prices instead
+            }
+        }
+        
+        // Calculate total price if not provided
+        let calculatedTotalPrice = 0;
+        
+        if (parsedSeatPrices.length > 0) {
+            // Sum up the prices from the parsed seat prices
+            calculatedTotalPrice = parsedSeatPrices.reduce((sum, item) => sum + (item.price || 0), 0);
+        } else {
+            // Calculate based on standard/premium prices
+            const stdPrice = parseFloat(standardPrice) || 200;
+            const premPrice = parseFloat(premiumPrice) || 300;
+            
+            // Assuming premium seats are in the back rows (e.g., rows F-J are premium if we have A-J)
+            const isPremiumSeat = (seat) => {
+                const row = seat.charAt(0);
+                // Simple logic: Second half of alphabet is premium
+                return row >= 'F' && row <= 'Z';
+            };
+            
+            // Calculate based on seat type (premium or standard)
+            calculatedTotalPrice = seats.reduce((sum, seat) => {
+                return sum + (isPremiumSeat(seat) ? premPrice : stdPrice);
+            }, 0);
+        }
+        
+        // Add convenience fee (5% of subtotal)
+        const convenienceFee = Math.round(calculatedTotalPrice * 0.05);
+        const finalTotalPrice = calculatedTotalPrice + convenienceFee;
+        
+        // Use the provided total price or the calculated one
+        const bookingTotalPrice = totalPrice ? parseFloat(totalPrice) : finalTotalPrice;
+        
+        // Store booking details in session for payment and next steps
         req.session.bookingDetails = {
-            movieId: movie._id,
-            movieTitle: movie.title,
-            theaterId: theater._id,
-            theaterName: theater.name,
-            screenId: finalScreenId,
-            screenName: finalScreenName,
-            showId: show._id,
-            showDate: date,
-            showTime: time,
-            selectedSeats: selectedSeatsArray,
-            seatPrices: seatPricesArray,
-            standardPrice: parseInt(standardPrice, 10) || 200,
-            premiumPrice: parseInt(premiumPrice, 10) || 300,
-            basePrice: basePrice,
-            convenienceFee: convenienceFee,
-            totalAmount: totalPriceNumber,
-            // Use the user data we extracted earlier, including the ID
             userId: userData.id,
+            movieId: movieId,
+            theaterId: theaterId,
+            showId: show ? show._id : null,
+            screenId: screenId || (show ? show.screenId._id : null),
+            screenName: screenName || (show ? show.screenName : 'Screen 1'),
+            showDate: originalDate,
+            showTime: time,
+            selectedSeats: seats,
+            seatPrices: parsedSeatPrices,
+            basePrice: calculatedTotalPrice,
+            convenienceFee: convenienceFee,
+            totalAmount: bookingTotalPrice,
+            standardPrice: parseFloat(standardPrice) || 200, // Store standardPrice explicitly
+            premiumPrice: parseFloat(premiumPrice) || 300, // Store premiumPrice explicitly
             customerName: userData.name,
             customerEmail: userData.email,
-            customerPhone: finalCustomerPhone,
-            isFallbackShow: show.isFallbackShow || false
+            customerPhone: customerPhone || userData.phone || ""
         };
+        
+        // Log the prices being stored in the session
+        console.log('Prices being stored in session:');
+        console.log('Standard Price:', parseFloat(standardPrice) || 200);
+        console.log('Premium Price:', parseFloat(premiumPrice) || 300);
+        
+        // Ensure session is saved before redirecting
+        await new Promise((resolve, reject) => {
+            req.session.save(err => {
+                if (err) {
+                    console.error('Error saving session:', err);
+                    reject(err);
+                } else {
+                    console.log('Session saved successfully');
+                    resolve();
+                }
+            });
+        });
 
         console.log('Booking details stored in session:', req.session.bookingDetails);
 
@@ -878,6 +908,8 @@ exports.processPayment = async (req, res) => {
             totalAmount: bookingDetails.totalAmount,
             basePrice: bookingDetails.basePrice,
             convenienceFee: bookingDetails.convenienceFee,
+            standardPrice: bookingDetails.standardPrice, // Save standard price for reference
+            premiumPrice: bookingDetails.premiumPrice, // Save premium price for reference
             paymentStatus: 'completed',
             status: 'confirmed',
             customerName: bookingDetails.customerName,

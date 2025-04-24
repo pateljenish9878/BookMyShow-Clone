@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
+const { debugDateString } = require('../utils/showHelpers');
 
 // Get all theaters
 exports.getTheaters = async (req, res) => {
@@ -469,16 +470,23 @@ exports.getTheatersForMovie = async (req, res) => {
             if (req.query.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 selectedDateStr = req.query.date;
                 console.log('Using exact date string from URL:', selectedDateStr);
+                
+                // Debug the date string format
+                debugDateString(selectedDateStr);
             }
         }
         
+        console.log('Final selectedDateStr for filtering shows:', selectedDateStr);
+
         // Create Date object for selected date (needed for some UI operations)
         // But we'll use selectedDateStr for all date comparisons
         let selectedDate;
         try {
-            // Parse the date string to create a Date object in local timezone
+            // Parse the date string to create a Date object at noon UTC to avoid timezone issues
             const [year, month, day] = selectedDateStr.split('-').map(Number);
-            selectedDate = new Date(year, month - 1, day, 12, 0, 0); // Set to noon to avoid timezone shifts
+            selectedDate = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+            console.log('Created selectedDate object:', selectedDate);
+            console.log('selectedDate ISO string:', selectedDate.toISOString());
         } catch (e) {
             console.error('Error parsing date:', e);
             selectedDate = today; // fallback to today
@@ -508,16 +516,28 @@ exports.getTheatersForMovie = async (req, res) => {
             });
         }
         
+        // Find shows and log the specific query being used
+        console.log(`MongoDB Query: Finding shows with movieId=${movieId}`);
+        
         // Get all shows for this movie using aggregation to handle dates correctly
+        console.log('Finding shows for movie ID:', movieId);
+        
         const shows = await Show.aggregate([
             {
                 $match: { 
-                    movieId: mongoose.Types.ObjectId.createFromHexString(movieId) 
+                    movieId: new mongoose.Types.ObjectId(movieId)
                 }
             },
             {
                 $addFields: {
-                    dateString: { $dateToString: { format: "%Y-%m-%d", date: "$showDate" } }
+                    // Make sure we have a consistent date string format for comparison
+                    dateString: { 
+                        $dateToString: { 
+                            format: "%Y-%m-%d", 
+                            date: "$showDate", 
+                            timezone: "UTC" // Explicitly use UTC to avoid timezone shifts
+                        } 
+                    }
                 }
             },
             {
@@ -540,6 +560,8 @@ exports.getTheatersForMovie = async (req, res) => {
                     dateString: 1,
                     showTime: 1,
                     price: 1,
+                    standardPrice: 1,
+                    premiumPrice: 1,
                     'theaterInfo.name': 1,
                     'theaterInfo.location': 1,
                     'theaterInfo.city': 1
@@ -551,6 +573,24 @@ exports.getTheatersForMovie = async (req, res) => {
         ]);
         
         console.log(`Found ${shows.length} shows for movie ID ${movieId} using aggregation`);
+        
+        // Sample the first few shows for debugging
+        if (shows.length > 0) {
+            // Log all the date strings to help debug the filtering issue
+            const dateStrings = [...new Set(shows.map(show => show.dateString))].sort();
+            console.log('All show dates available:', dateStrings);
+            console.log('We are filtering for date:', selectedDateStr);
+            
+            // Log the first few shows
+            console.log('Sample show data:');
+            for (let i = 0; i < Math.min(3, shows.length); i++) {
+                console.log(`Show ${i+1}:`);
+                console.log(`  dateString: ${shows[i].dateString}`);
+                console.log(`  original date: ${shows[i].showDate}`);
+                console.log(`  theater: ${shows[i].theaterInfo.name}`);
+                console.log(`  time: ${shows[i].showTime}`);
+            }
+        }
         
         // Group shows by theater
         const theaterShows = {};
@@ -587,6 +627,41 @@ exports.getTheatersForMovie = async (req, res) => {
         
         // Log theater shows for debugging
         console.log(`Grouped shows for ${Object.keys(theaterShows).length} theaters using aggregation`);
+
+        // Filtered count to ensure we have shows for the selected date
+        let filteredShowCount = 0;
+        
+        // For each theater, filter shows by date and log the detailed results
+        Object.keys(theaterShows).forEach(theaterId => {
+            console.log(`Filtering shows for theater ${theaterId}`);
+            const allTheaterShows = theaterShows[theaterId];
+            console.log(`Theater has ${allTheaterShows.length} total shows`);
+            
+            // Log all dates for this theater
+            const theaterDates = [...new Set(allTheaterShows.map(s => s.dateString))].sort();
+            console.log(`Theater show dates: ${theaterDates.join(', ')}`);
+            
+            const dateFilteredShows = allTheaterShows.filter(show => {
+                // Debug each show's date comparison
+                const showDateStr = show.dateString;
+                const isMatch = showDateStr === selectedDateStr;
+                
+                if (showDateStr === selectedDateStr) {
+                    console.log(`MATCH: Show date ${showDateStr} matches selected date ${selectedDateStr}`);
+                }
+                
+                return isMatch;
+            });
+            
+            console.log(`Theater ${theaterId} has ${dateFilteredShows.length} shows for date ${selectedDateStr}`);
+            
+            // CRITICAL FIX: Replace the theater shows array with the filtered shows
+            // This is essential for the view to display the correct shows
+            theaterShows[theaterId] = dateFilteredShows;
+            
+            filteredShowCount += dateFilteredShows.length;
+        });
+        console.log(`Shows available specifically for date ${selectedDateStr}: ${filteredShowCount}`);
         
         res.render('frontend/selectTheater', {
             movie,
@@ -599,6 +674,7 @@ exports.getTheatersForMovie = async (req, res) => {
             searchQuery: '',
             originalUrl: req.originalUrl // Pass the original URL to the template
         });
+        
     } catch (error) {
         console.error('Error fetching theaters for movie:', error);
         res.status(500).render('error', {

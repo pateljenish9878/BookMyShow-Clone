@@ -143,9 +143,25 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
+    console.error('Global error handler caught:', err);
+    
+    // Check if this is an API request
+    const isApiRequest = req.xhr || 
+        (req.headers.accept && req.headers.accept.includes('application/json')) ||
+        (req.headers['content-type'] && req.headers['content-type'].includes('application/json'));
+    
+    if (isApiRequest) {
+        return res.status(500).json({
+            success: false,
+            message: err.message || 'An unexpected error occurred',
+            error: process.env.NODE_ENV === 'production' ? 'Server error' : err.stack
+        });
+    }
+    
     res.status(500).render('error', {
         title: 'Server Error',
-        message: 'Something went wrong on our end.',
+        message: 'Something went wrong on our end. Our team has been notified.',
+        error: process.env.NODE_ENV === 'production' ? null : err,
         searchQuery: ''
     });
 });

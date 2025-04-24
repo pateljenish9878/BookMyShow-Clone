@@ -8,51 +8,78 @@ const JWT_SECRET = process.env.JWT_SECRET || 'bookMyShowSecret';
 
 // Check if user is authenticated (works with both passport and session auth)
 exports.authenticate = (req, res, next) => {
-  // Determine if this is an admin route
-  const isAdminRoute = req.path.startsWith('/admin');
-  
-  // For admin routes, check only adminUser session
-  if (isAdminRoute) {
-    if (req.session.adminUser) {
-      // For admin routes, set req.user to adminUser session
-      req.user = req.session.adminUser;
-      return next();
+  try {
+    // Determine if this is an admin route
+    const isAdminRoute = req.path.startsWith('/admin');
+    
+    // Debug information
+    console.log(`Authentication check for path: ${req.path} (Admin route: ${isAdminRoute})`);
+    console.log(`Session available: ${!!req.session}`);
+    if (req.session) {
+      console.log(`User in session: ${!!req.session.user}`);
+      console.log(`Admin in session: ${!!req.session.adminUser}`);
     }
     
-    // If no admin session, redirect to admin login
-    console.log('No admin session found for admin route, redirecting to login');
-    return res.redirect('/admin/login');
-  } 
-  // For frontend routes, check only user session
-  else {
-    if (req.session.user) {
-      // For frontend routes, set req.user to user session
-      req.user = req.session.user;
-      return next();
+    // For admin routes, check only adminUser session
+    if (isAdminRoute) {
+      if (req.session && req.session.adminUser) {
+        // For admin routes, set req.user to adminUser session
+        req.user = req.session.adminUser;
+        return next();
+      }
+      
+      // If no admin session, redirect to admin login
+      console.log('No admin session found for admin route, redirecting to login');
+      return res.redirect('/admin/login');
+    } 
+    // For frontend routes, check only user session
+    else {
+      if (req.session && req.session.user) {
+        // For frontend routes, set req.user to user session
+        req.user = req.session.user;
+        return next();
+      }
+      
+      if (req.isAuthenticated && req.isAuthenticated()) {
+        // If using passport directly, that's fine too
+        return next();
+      }
+      
+      // Store the URL the user is trying to access
+      if (req.session) {
+        req.session.redirectTo = req.originalUrl;
+      }
+      
+      // Check if this is an API request
+      const isApiRequest = req.xhr || 
+        (req.headers.accept && req.headers.accept.includes('application/json')) ||
+        (req.headers['content-type'] && req.headers['content-type'].includes('application/json'));
+      
+      if (isApiRequest) {
+        return res.status(401).json({ 
+          success: false, 
+          message: 'Authentication required',
+          redirectTo: '/user/login'
+        });
+      }
+      
+      // For regular requests, redirect to user login page
+      console.log('No user session found for frontend route, redirecting to login');
+      res.redirect('/user/login');
     }
-    
-    if (req.isAuthenticated()) {
-      // If using passport directly, that's fine too
-      return next();
-    }
-    
-    // Store the URL the user is trying to access
-    req.session.redirectTo = req.originalUrl;
-    
-    // Check if this is an API request
-    const isApiRequest = req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'));
-    
-    if (isApiRequest) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required',
-        redirectTo: '/user/login'
+  } catch (error) {
+    console.error('Error in authentication middleware:', error);
+    // For API requests
+    if (req.xhr || 
+      (req.headers.accept && req.headers.accept.includes('application/json')) ||
+      (req.headers['content-type'] && req.headers['content-type'].includes('application/json'))) {
+      return res.status(500).json({
+        success: false,
+        message: 'Authentication error'
       });
     }
-    
-    // For regular requests, redirect to user login page
-    console.log('No user session found for frontend route, redirecting to login');
-    res.redirect('/user/login');
+    // For regular requests
+    return res.redirect('/user/login');
   }
 };
 

@@ -9,7 +9,19 @@ const ShowSchema = new mongoose.Schema({
     price: { type: Number, required: true },
     bookedSeats: [{ type: String }],
     createdAt: { type: Date, default: Date.now }
-}, { collection: 'shows' });
+}, { collection: 'shows', toJSON: { virtuals: true }, toObject: { virtuals: true } });
+
+// Virtual for date string in YYYY-MM-DD format
+ShowSchema.virtual('dateString').get(function() {
+    if (this.showDate) {
+        // Format date to YYYY-MM-DD in UTC to avoid timezone issues
+        const year = this.showDate.getUTCFullYear();
+        const month = String(this.showDate.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(this.showDate.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return null;
+});
 
 // Method to get formatted time for display
 ShowSchema.methods.getFormattedTime = function() {
