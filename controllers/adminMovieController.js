@@ -306,10 +306,7 @@ exports.deleteMovie = async (req, res) => {
         
         const movie = await Movie.findById(movieId);
         if (!movie) {
-            return res.status(404).json({ 
-                success: false, 
-                message: 'Movie not found' 
-            });
+            return res.redirect(`/admin/movies?flash_type=error&flash_message=Movie+not+found`);
         }
 
         let imagePath = path.join(__dirname, '../uploads/movies', movie.image);
@@ -340,16 +337,10 @@ exports.deleteMovie = async (req, res) => {
 
         await Movie.findByIdAndDelete(movieId);
         
-        return res.json({ 
-            success: true, 
-            message: 'Movie deleted successfully',
-            redirectUrl: '/admin/movies?flash_type=success&flash_message=Movie+deleted+successfully'
-        });
+        return res.redirect(`/admin/movies?flash_type=success&flash_message=Movie+deleted+successfully`);
     } catch (error) {
         console.error('Error deleting movie:', error);
-        return res.status(500).json({ 
-            success: false, 
-            message: 'Server error: ' + error.message 
-        });
+        return res.redirect(`/admin/movies?flash_type=error&flash_message=failed+to+delete+movie:+${encodeURIComponent(error.message)}`);
+
     }
 }; 

@@ -96,7 +96,6 @@ exports.deleteMovie = async (req, res) => {
             return res.status(404).send("Movie not found");
         }
 
-        // Delete images from uploads folder
         const deleteFile = (filePath) => {
             if (filePath) {
                 const fullPath = path.join(__dirname, "../uploads", filePath);
