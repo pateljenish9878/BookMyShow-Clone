@@ -9,63 +9,46 @@ const JWT_SECRET = process.env.JWT_SECRET || 'bookMyShowSecret';
 // Check if user is authenticated (works with both passport and session auth)
 exports.authenticate = (req, res, next) => {
   try {
-    // Determine if this is an admin route
-    const isAdminRoute = req.path.startsWith('/admin');
+    const path = req.path;
     
-    // Debug information
-    console.log(`Authentication check for path: ${req.path} (Admin route: ${isAdminRoute})`);
-    console.log(`Session available: ${!!req.session}`);
-    if (req.session) {
-      console.log(`User in session: ${!!req.session.user}`);
-      console.log(`Admin in session: ${!!req.session.adminUser}`);
+    // Admin routes require adminUser session
+    if (path.startsWith('/admin')) {
+      if (req.session.adminUser) {
+        return next();
+      } else {
+        if (req.xhr || req.path.includes('/api/')) {
+          return res.status(401).json({ 
+            message: "Authentication required. Please log in as admin." 
+          });
+        }
+        return res.redirect('/admin/login');
+      }
     }
     
-    // For admin routes, check only adminUser session
-    if (isAdminRoute) {
-      if (req.session && req.session.adminUser) {
-        // For admin routes, set req.user to adminUser session
-        req.user = req.session.adminUser;
+    // Booking routes require user session, even if admin is logged in
+    if (path.startsWith('/bookings')) {
+      if (req.session.user) {
         return next();
+      } else {
+        if (req.xhr || req.path.includes('/api/')) {
+          return res.status(401).json({ 
+            message: "Authentication required. Please log in to book tickets." 
+          });
+        }
+        return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
       }
-      
-      // If no admin session, redirect to admin login
-      console.log('No admin session found for admin route, redirecting to login');
-      return res.redirect('/admin/login');
-    } 
-    // For frontend routes, check only user session
-    else {
-      if (req.session && req.session.user) {
-        // For frontend routes, set req.user to user session
-        req.user = req.session.user;
-        return next();
-      }
-      
-      if (req.isAuthenticated && req.isAuthenticated()) {
-        // If using passport directly, that's fine too
-        return next();
-      }
-      
-      // Store the URL the user is trying to access
-      if (req.session) {
-        req.session.redirectTo = req.originalUrl;
-      }
-      
-      // Check if this is an API request
-      const isApiRequest = req.xhr || 
-        (req.headers.accept && req.headers.accept.includes('application/json')) ||
-        (req.headers['content-type'] && req.headers['content-type'].includes('application/json'));
-      
-      if (isApiRequest) {
+    }
+    
+    // Frontend/user routes can use either user or adminUser session
+    if (req.session.user || req.session.adminUser) {
+      return next();
+    } else {
+      if (req.xhr || req.path.includes('/api/')) {
         return res.status(401).json({ 
-          success: false, 
-          message: 'Authentication required',
-          redirectTo: '/user/login'
+          message: "Authentication required. Please log in." 
         });
       }
-      
-      // For regular requests, redirect to user login page
-      console.log('No user session found for frontend route, redirecting to login');
-      res.redirect('/user/login');
+      return res.redirect('/login?redirect=' + encodeURIComponent(req.originalUrl));
     }
   } catch (error) {
     console.error('Error in authentication middleware:', error);

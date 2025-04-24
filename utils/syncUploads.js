@@ -58,11 +58,11 @@ const syncDirectory = (sourcePath, destPath) => {
             // Copy file if it doesn't exist in destination
             if (!fs.existsSync(destFile)) {
                 copyFile(sourceFile, destFile);
-                console.log(`Copied ${file} from ${sourcePath} to ${destPath}`);
+                
             }
         });
 
-        console.log(`Synchronized ${files.length} files from ${sourcePath} to ${destPath}`);
+        
     } catch (err) {
         console.error(`Error synchronizing ${sourcePath} to ${destPath}:`, err);
     }
@@ -77,7 +77,7 @@ const syncAllDirectories = () => {
         const destPath = path.resolve(pair.dest);
         syncDirectory(sourcePath, destPath);
     });
-    console.log('Completed synchronization of all upload directories');
+    
 };
 
 // Run synchronization

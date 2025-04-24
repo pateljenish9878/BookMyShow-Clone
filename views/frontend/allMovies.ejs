@@ -183,6 +183,67 @@
                 <% }); %>
                 <% } %>
             </div>
+
+            <!-- Pagination controls -->
+            <% if (pagination) { %>
+            <div class="pagination-controls">
+                <div class="pagination-info">
+                    Showing <span><%= (pagination.page - 1) * 12 + 1 %></span> - 
+                    <span><%= Math.min(pagination.page * 12, pagination.totalMovies) %></span> 
+                    of <span><%= pagination.totalMovies %></span> movies
+                </div>
+                <% if (pagination.totalPages > 1) { %>
+                <div class="pagination-buttons">
+                    <% if (pagination.hasPrevPage) { %>
+                        <a href="/all-movies?page=<%= pagination.prevPage %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="page-btn prev-btn">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    <% } %>
+                    
+                    <% 
+                    let startPage = Math.max(1, pagination.page - 2);
+                    let endPage = Math.min(pagination.totalPages, pagination.page + 2);
+                    
+                    // Always show at least 5 pages if available
+                    if (endPage - startPage < 4 && pagination.totalPages > 4) {
+                        if (pagination.page < 3) {
+                            endPage = Math.min(5, pagination.totalPages);
+                        } else if (pagination.page > pagination.totalPages - 2) {
+                            startPage = Math.max(1, pagination.totalPages - 4);
+                        }
+                    }
+                    
+                    // Add first page if not included
+                    if (startPage > 1) { %>
+                        <a href="/all-movies?page=1<%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="page-btn">1</a>
+                        <% if (startPage > 2) { %>
+                            <span class="page-ellipsis">...</span>
+                        <% } %>
+                    <% } %>
+                    
+                    <% for (let i = startPage; i <= endPage; i++) { %>
+                        <a href="/all-movies?page=<%= i %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" 
+                           class="page-btn <%= pagination.page === i ? 'active-page' : '' %>"><%= i %></a>
+                    <% } %>
+                    
+                    <% // Add last page if not included
+                    if (endPage < pagination.totalPages) { 
+                        if (endPage < pagination.totalPages - 1) { %>
+                            <span class="page-ellipsis">...</span>
+                        <% } %>
+                        <a href="/all-movies?page=<%= pagination.totalPages %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" 
+                           class="page-btn"><%= pagination.totalPages %></a>
+                    <% } %>
+                    
+                    <% if (pagination.hasNextPage) { %>
+                        <a href="/all-movies?page=<%= pagination.nextPage %><%= searchQuery ? '&search=' + searchQuery : '' %><%= selectedLanguage ? '&language=' + selectedLanguage : '' %><%= selectedCategory ? '&category=' + selectedCategory : '' %>" class="page-btn next-btn">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    <% } %>
+                </div>
+                <% } %>
+            </div>
+            <% } %>
         </div>
     </section>
 

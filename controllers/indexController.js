@@ -36,6 +36,11 @@ exports.getAllMovies = async (req, res) => {
         const language = req.query.language || "";
         const category = req.query.category || "";
         
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = 12; // 12 movies per page
+        const skip = (page - 1) * limit;
+        
         const query = {};
         
         // Add search filter if provided
@@ -54,7 +59,14 @@ exports.getAllMovies = async (req, res) => {
             query.category = { $regex: category, $options: "i" };
         }
 
-        const movies = await Movie.find(query);
+        // Count total movies matching the query for pagination
+        const totalMovies = await Movie.countDocuments(query);
+        const totalPages = Math.ceil(totalMovies / limit);
+
+        // Get paginated movies
+        const movies = await Movie.find(query)
+            .skip(skip)
+            .limit(limit);
         
         // Get slider banners from settings
         const settings = await Setting.findOne();
@@ -68,7 +80,16 @@ exports.getAllMovies = async (req, res) => {
             selectedLanguage: language,
             selectedCategory: category,
             category: category, // Add both variables to the template
-            sliderBanners
+            sliderBanners,
+            pagination: {
+                page,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page + 1,
+                prevPage: page - 1,
+                totalMovies
+            }
         });
     } catch (error) {
         console.error(error);
