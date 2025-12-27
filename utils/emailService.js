@@ -5,11 +5,20 @@ exports.generateOTP = () => {
 };
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
-    }
+    },
+    tls: {
+        family: 4,               // 👈 force IPv4 (important for Render)
+        rejectUnauthorized: false
+    },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000
 });
 
 exports.sendPasswordResetOTP = async (email, otp) => {
